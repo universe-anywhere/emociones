@@ -1,6 +1,6 @@
 [project]
 name = "emociones"
-version = "0.1.0"
+version = "1.0.0"
 description = "Emociones (Fotos y Videos)"
 authors = [
     { name = "José Mª Barreiro López", email = "jmbarreiroicm@gmail.com" }
@@ -8,15 +8,12 @@ authors = [
 license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.7"
+dependencies = ["PyQt5"]
 
-# Dependencias necesarias para el proyecto
-[project.dependencies]
-kivy = "*"
-pillow = "*"
 
 # Configuración del sistema de construcción
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["pyinstaller","setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 # Configuración adicional para setuptools
@@ -24,6 +21,7 @@ build-backend = "setuptools.build_meta"
 packages = ["emociones"]
 package-dir = {"" = "src"}
 
-# Incluye todo el contenido de la carpeta data
-[tool.setuptools.package-data]
-my_module = ["../data/preferences.json"]
+[tool.pyinstaller]
+entry-point = "src/app.py"
+output-name = "emociones"
+add-data = ["data/preferences.json=data"]

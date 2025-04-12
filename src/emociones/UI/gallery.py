@@ -2,8 +2,8 @@ import os
 from PyQt5.QtWidgets import QScrollArea, QLabel, QGridLayout, QWidget, QFileDialog
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
-from constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN,SCROLLBAR_WIDTH)
-from preferences import preferences
+from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN,SCROLLBAR_WIDTH)
+from emociones.preferences import preferences
 
 class Gallery:
     def __init__(self, content_layout):

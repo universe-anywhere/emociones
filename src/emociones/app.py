@@ -3,8 +3,8 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, 
     QPushButton, QWidget, 
 )
-from UI.gallery import Gallery
-from constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN, SCROLLBAR_WIDTH, WIDGET_ADDED_WIDTH)
+from emociones.UI.gallery import Gallery
+from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN, SCROLLBAR_WIDTH, WIDGET_ADDED_WIDTH)
 
 class EmocionesApp(QMainWindow):
     def __init__(self):

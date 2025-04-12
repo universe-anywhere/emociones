@@ -1,0 +1,14 @@
+LICENSE
+README.rst
+pyproject.toml
+src/emociones/__init__.py
+src/emociones/__main__.py
+src/emociones/app.py
+src/emociones/constants.py
+src/emociones/preferences.py
+src/emociones.egg-info/PKG-INFO
+src/emociones.egg-info/SOURCES.txt
+src/emociones.egg-info/dependency_links.txt
+src/emociones.egg-info/requires.txt
+src/emociones.egg-info/top_level.txt
+src/emociones/../data/preferences.json
