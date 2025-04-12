@@ -1,0 +1,25 @@
+[project]
+name = "emociones"
+version = "0.1.0"
+description = "Emociones (Fotos y Videos)"
+authors = [
+    { name = "José Mª Barreiro López", email = "jmbarreiroicm@gmail.com" }
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.7"
+
+# Dependencias necesarias para el proyecto
+[project.dependencies]
+kivy = "*"
+pillow = "*"
+
+# Configuración del sistema de construcción
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# Configuración adicional para setuptools
+[tool.setuptools]
+packages = ["emociones"]
+package-dir = {"" = "src"}

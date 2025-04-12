@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./build/emociones/windows/app/src/app_packages"
+    ]
+}
