@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QScrollArea, QLabel, QGridLayout, QWidget, QFileDial
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 from constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN,SCROLLBAR_WIDTH)
-
+from preferences import preferences
 
 class Gallery:
     def __init__(self, content_layout):
@@ -14,13 +14,23 @@ class Gallery:
 
     def open_folder_dialog(self):
         # Abre un diálogo para seleccionar una carpeta
-        folder_path = QFileDialog.getExistingDirectory(None, "Seleccionar carpeta de imágenes")
+        folder_path = QFileDialog.getExistingDirectory(None, "Seleccionar carpeta de imágenes", preferences["gallery"]["galleryPath"])
         if folder_path:
             # Limpia el contenido actual
             self.clear_content()
 
-            # Busca las imágenes en la carpeta seleccionada
-            image_paths = self.get_image_paths(folder_path)
+            # Verifica si debe cargar imágenes de forma recursiva
+            recursive_loading = preferences["gallery"]["recursive_loading"]
+
+            # Obtiene las rutas de las imágenes según el modo de carga
+            if recursive_loading:
+                print("Cargando imágenes recursivamente...")
+                image_paths = self.get_image_paths_recursively(folder_path)
+            else:
+                print("Cargando imágenes de la carpeta seleccionada...")
+                image_paths = self.get_image_paths(folder_path)
+
+            # Procesa las imágenes si se encontraron
             if image_paths:
                 self.create_gallery()
                 self.add_images_to_gallery(image_paths)
@@ -38,22 +48,26 @@ class Gallery:
         self.current_image_widgets = []  # Limpia la lista de widgets de imágenes
 
     def get_image_paths(self, folder_path):
-        supported_extensions = (".png", ".jpg", ".jpeg", ".bmp", ".gif")
+        # Obtener extensiones soportadas desde las preferencias
+        supported_extensions = preferences["gallery"]["supported_extensions"]
+        return [
+            os.path.join(folder_path, file)
+            for file in os.listdir(folder_path)
+            if any(file.lower().endswith(ext) for ext in supported_extensions)
+        ]
+
+    def get_image_paths_recursively(self, folder_path):
+        # Obtener extensiones soportadas desde las preferencias
+        supported_extensions = preferences["gallery"]["supported_extensions"]
         result = []
-
-        try:
-            for root, _, files in os.walk(folder_path):  # Recorre carpetas y subcarpetas
-                for file_name in files:
-                    if file_name.lower().endswith(supported_extensions):
-                        result.append(os.path.join(root, file_name))  # Construye la ruta completa
-            return result
-        except FileNotFoundError:
-            print(f"La carpeta '{folder_path}' no existe.")
-            return []
-        except PermissionError:
-            print(f"No se tienen permisos para acceder a la carpeta '{folder_path}'.")
-            return []
-
+        for root, _, files in os.walk(folder_path):
+            result.extend(
+                os.path.join(root, file)
+                for file in files
+                if any(file.lower().endswith(ext) for ext in supported_extensions)
+            )
+        return result
+    
     def create_gallery(self):
         # Crea el área de desplazamiento para la galería
         self.scroll_area = QScrollArea()
@@ -104,7 +118,7 @@ class Gallery:
         adjusted_image_width = (window_width - total_spacing) // images_per_row
 
         # Configura los márgenes y el espaciado del diseño
-        self.gallery_layout.setContentsMargins(SIDE_MARGIN, 0, SIDE_MARGIN, 0)
+        self.gallery_layout.setContentsMargins(SIDE_MARGIN, 0, SIDE_MARGIN, SIDE_MARGIN)
         self.gallery_layout.setHorizontalSpacing(10)
         self.gallery_layout.setVerticalSpacing(10)
 

@@ -1,0 +1,7 @@
+{
+    "gallery": {
+        "galleryPath": "F:\\Datos conservar\\álbum familiar",
+        "recursive_loading": true,
+        "supported_extensions": [".png", ".jpg", ".jpeg", ".bmp", ".gif"]
+    } 
+}

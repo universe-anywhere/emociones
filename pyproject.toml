@@ -23,3 +23,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = ["emociones"]
 package-dir = {"" = "src"}
+
+# Incluye todo el contenido de la carpeta data
+[tool.setuptools.package-data]
+my_module = ["../data/preferences.json"]
