@@ -1,0 +1,5 @@
+# Ejecucion en desarrollo
+python -m emociones.app  
+
+# Generacion de ejecutable
+pyinstaller --onefile --add-data "src/emociones/data;emociones/data" --add-binary "./.venv/Lib/site-packages/vosk/*.dll;vosk" --name "emociones" src/emociones/app.py

@@ -5,7 +5,7 @@
         "supported_extensions": [".png", ".jpg", ".jpeg", ".bmp", ".gif"]
     },
     "chatBoot": {
-        "model_path": ".\\emociones\\data\\vosk-model-small-es-0.42",
+        "model_path": "data\\vosk-model-small-es-0.42",
         "rate": 130,
         "samplerate": 42000
     }

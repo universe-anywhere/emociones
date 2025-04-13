@@ -4,8 +4,8 @@
 a = Analysis(
     ['src\\emociones\\app.py'],
     pathex=[],
-    binaries=[],
-    datas=[('src/emociones/data', 'data')],
+    binaries=[('./.venv/Lib/site-packages/vosk/*.dll', 'vosk')],
+    datas=[('src/emociones/data', 'emociones/data')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

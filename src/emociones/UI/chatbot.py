@@ -1,15 +1,21 @@
+import os
 import sounddevice as sd
 import vosk
 import json
 import pyttsx3
 import numpy as np  # Asegúrate de importar numpy
+from emociones.utils.io import get_base_path
 from emociones.preferences import preferences
 
 class ChatBot:
     def __init__(self):
         print("Iniciando el ChatBot...")
         # Descargar el modelo de Vosk desde: https://alphacephei.com/vosk/models
-        self.model_path = preferences["chatBoot"]["model_path"]  # Ruta donde se almacena el modelo
+        base_path = get_base_path()
+
+        # Construye la ruta completa al modelo desde base_path
+        self.model_path = os.path.join(base_path, preferences["chatBoot"]["model_path"])
+        print(f"Ruta del modelo: {self.model_path}")
         self.model = vosk.Model(self.model_path)
 
         # Inicializar el motor de texto a voz
