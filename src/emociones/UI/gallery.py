@@ -106,21 +106,26 @@ class Gallery:
         self.show_gallery()
 
     def show_gallery(self):
-        # Determinar el ancho disponible considerando el espacio de content_layout o scroll_area
-        layout_width = self.content_layout.geometry().width()
-        window_width = max((layout_width if layout_width > 0 else self.scroll_area.width()) - (2 * SIDE_MARGIN) - SCROLLBAR_WIDTH, MAX_IMAGE_WIDTH)
+    # Intentar obtener el ancho del content_layout desde el widget padre
+        parent_widget = self.content_layout.parentWidget()
+        layout_width = parent_widget.geometry().width() if parent_widget else self.content_layout.geometry().width()
 
+        if layout_width <= 0:  # Si el ancho no es válido
+            layout_width = self.scroll_area.width()  # Usar scroll_area como respaldo
+        
+        # Determinar el ancho disponible considerando el espacio de content_layout o scroll_area
+        layout_width = max((layout_width if layout_width > 0 else self.scroll_area.width()) - (2 * SIDE_MARGIN) - SCROLLBAR_WIDTH,MAX_IMAGE_WIDTH)
         # Calcula cuántas imágenes caben en la primera fila sin desbordar horizontalmente
-        images_per_row = max(1, window_width // MAX_IMAGE_WIDTH)
+        images_per_row = max(1, layout_width // (MAX_IMAGE_WIDTH + (2*SIDE_MARGIN)))
 
         # Ajusta el tamaño de cada imagen teniendo en cuenta el espaciamiento
         total_spacing = max((images_per_row - 1) * SIDE_MARGIN, 0)  # Espaciado entre imágenes, evitando negativos
-        adjusted_image_width = (window_width - total_spacing) // images_per_row
+        adjusted_image_width = (layout_width - total_spacing) // images_per_row
 
         # Configura los márgenes y el espaciado del diseño
         self.gallery_layout.setContentsMargins(SIDE_MARGIN, 0, SIDE_MARGIN, SIDE_MARGIN)
-        self.gallery_layout.setHorizontalSpacing(10)
-        self.gallery_layout.setVerticalSpacing(10)
+        self.gallery_layout.setHorizontalSpacing(SIDE_MARGIN)
+        self.gallery_layout.setVerticalSpacing(SIDE_MARGIN)
 
         # Centra las filas de la galería en el contenedor
         self.gallery_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)

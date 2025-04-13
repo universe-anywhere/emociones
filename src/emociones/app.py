@@ -4,11 +4,19 @@ from PyQt5.QtWidgets import (
     QPushButton, QWidget, 
 )
 from emociones.UI.gallery import Gallery
+from emociones.UI.chatbot import ChatBot
 from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN, SCROLLBAR_WIDTH, WIDGET_ADDED_WIDTH)
 
 class EmocionesApp(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.buttons = {
+            "Hablar con el Chatbot": self.open_chatbot_dialog,
+            "Gestionar Galería": self.manage_gallery,
+            "Ajustes": self.open_settings,  # Otro ejemplo
+        }
+
         self.setWindowTitle("Emociones (Fotos y Videos)")
         self.setGeometry(100, 100, 800, 600)
 
@@ -24,31 +32,40 @@ class EmocionesApp(QMainWindow):
         self.button_layout = QHBoxLayout()
         self.main_layout.addLayout(self.button_layout)
 
-        # Botón para gestionar la galería
-        self.menu_button = QPushButton("Gestionar")
-        self.button_layout.addWidget(self.menu_button)
+        for text, function in self.buttons.items():
+            button = QPushButton(text)
+            self.button_layout.addWidget(button)
+            button.clicked.connect(function)
 
         # Sección inferior: contenido dinámico
         self.content_layout = QVBoxLayout()
         self.main_layout.addLayout(self.content_layout)
 
-        # Conectar el botón para instanciar Gallery y abrir el diálogo
-        self.menu_button.clicked.connect(self.manage_gallery)
+    def open_chatbot_dialog(self):
+        # Usar una variable local para instanciar ChatBot
+        chatBot_instance = getattr(self, "_chatBoot_instance", None)  # Comprobar si ya existe la instancia
+        if not chatBot_instance:
+            chatBot_instance = ChatBot()
+        chatBot_instance.open_chatbot_dialog()  # Abrir el diálogo del chatbot    
 
-        # Variable para almacenar la instancia de Gallery
-        self.gallery = None
 
     def manage_gallery(self):
-        # Instanciar Gallery solo cuando se presione el botón
-        if not self.gallery:
-            self.gallery = Gallery(self.content_layout)
-        self.gallery.open_folder_dialog()
+        # Usar una variable local para instanciar Gallery
+        gallery_instance = getattr(self, "_gallery_instance", None)  # Comprobar si ya existe la instancia
+        if not gallery_instance:
+            gallery_instance = Gallery(self.content_layout)
+            setattr(self, "_gallery_instance", gallery_instance)  # Guardar la instancia como atributo dinámico
+        gallery_instance.open_folder_dialog()
 
     def resizeEvent(self, event):
-        # Ajusta la galería al redimensionar la ventana
-        if self.gallery and hasattr(self.gallery, 'gallery_layout'):
-            self.gallery.show_gallery()
+        # Verificar si existe _gallery_instance y ajustarla al redimensionar
+        gallery_instance = getattr(self, "_gallery_instance", None)  # Obtener la instancia dinámica
+        if gallery_instance and hasattr(gallery_instance, 'gallery_layout'):
+            gallery_instance.show_gallery()  # Ajustar la galería
         super().resizeEvent(event)
+
+    def open_settings(self):
+        print("Settings...")
 
 def main():
     import sys
