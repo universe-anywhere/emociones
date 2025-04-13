@@ -15,16 +15,6 @@ def get_base_path():
         base_path = sys._MEIPASS
         if not base_path.endswith("emociones"):
             base_path = os.path.join(base_path, "emociones")
-
-        print(f"Mostrando archivos en: {base_path}")
-
-        for root, dirs, files in os.walk(base_path):
-            print(f"\nDirectorio: {root}")
-            for dir_name in dirs:
-                print(f"  [Carpeta] {dir_name}")
-            for file_name in files:
-                print(f"  [Archivo] {file_name}")
-
     else:
         # En desarrollo, utiliza la ruta del directorio actual
         base_path = os.getcwd()
