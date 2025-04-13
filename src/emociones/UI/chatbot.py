@@ -1,4 +1,5 @@
 import os
+import unicodedata
 import sounddevice as sd
 import vosk
 import json
@@ -23,6 +24,13 @@ class ChatBot:
         self.engine.setProperty("rate", preferences["chatBoot"]["rate"])  # Ajusta la velocidad del habla
         self.samplerate = preferences["chatBoot"]["samplerate"]
 
+    def normalize_text(self, text):
+        # Eliminar tildes y normalizar el texto
+        return ''.join(
+            c for c in unicodedata.normalize('NFD', text)
+            if unicodedata.category(c) != 'Mn'
+        )
+
     def open_chatbot_dialog(self):
         print("Chat bot...")
         transcribed_text = self.listen_and_transcribe()
@@ -38,7 +46,7 @@ class ChatBot:
         if (texto != ""):
             self.speak(texto)
         else:  
-            self.speak("¿Qué puedo hacer por ti?")  
+            self.speak("¿Qué puedo hacer por tí?")  
 
         # Escucha activa
         with sd.RawInputStream(samplerate=self.samplerate, blocksize=8000, dtype="int16", channels=1) as stream:
@@ -52,4 +60,4 @@ class ChatBot:
                 if rec.AcceptWaveform(data_bytes):
                     result = json.loads(rec.Result())
                     print(f"Transcripción: {result['text']}")
-                    return result['text']
+                    return  self.normalize_text(result['text'])

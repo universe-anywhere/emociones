@@ -14,15 +14,21 @@ class DatabaseHandler:
 
         print("Claves foráneas activadas.")
 
-    def create_entity(self, name):
-        print("Creando entidad:", name)
+    def create_entity(self, entity):
+        print("Creando entidad:", entity)
 #        self.cursor.execute("INSERT INTO entity (name) VALUES (?)", (name,))
 #        self.connection.commit()
 
-    def create_attribute(self, entity_name, attribute_name):
-        print("Creando atributo:", attribute_name, "en entidad:", entity_name)
+    def create_attribute(self, entity, attribute):
+        print("Creando atributo:", attribute, "en entidad:", entity)
 #        self.cursor.execute("INSERT INTO attribute (entity_id, name) VALUES (?, ?)", (entity_id, name))
 #        self.connection.commit()
+
+    def delete_entity(self, entity):
+        print("Eliminando entidad:", entity)
+
+    def delete_attribute(self, entity, attribute):
+        print("Eliminando atributo:", attribute, "en entidad:", entity)
 
     def close(self):
         self.connection.close()
