@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import (
 )
 from emociones.UI.gallery import Gallery
 from emociones.UI.chatbot import ChatBot
+from emociones.UI.settings import Settings
+
 from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN, SCROLLBAR_WIDTH, WIDGET_ADDED_WIDTH)
 
 class EmocionesApp(QMainWindow):
@@ -67,7 +69,8 @@ class EmocionesApp(QMainWindow):
         super().resizeEvent(event)
 
     def open_settings(self):
-        print("Settings...")
+        settings_instance = Settings(self)
+        settings_instance.open_settings()
 
 def main():
     import sys

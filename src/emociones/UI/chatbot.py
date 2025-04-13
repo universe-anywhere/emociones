@@ -14,6 +14,8 @@ class ChatBot:
 
         # Inicializar el motor de texto a voz
         self.engine = pyttsx3.init()
+        self.engine.setProperty("rate", preferences["chatBoot"]["rate"])  # Ajusta la velocidad del habla
+        self.samplerate = preferences["chatBoot"]["samplerate"]
 
     def open_chatbot_dialog(self):
         print("Chat bot...")
@@ -27,12 +29,11 @@ class ChatBot:
 
     def listen_and_transcribe(self):
         """Escucha al usuario y transcribe sin límite de tiempo."""
-        samplerate = 16000
-        self.speak("Diga algo...")  # Reproducir "Diga algo" por los altavoces
+        self.speak("Espere 3 segundos y diga algo...")  # Reproducir "Diga algo" por los altavoces
 
         # Escucha activa
-        with sd.RawInputStream(samplerate=samplerate, blocksize=8000, dtype="int16", channels=1) as stream:
-            rec = vosk.KaldiRecognizer(self.model, samplerate)
+        with sd.RawInputStream(samplerate=self.samplerate, blocksize=8000, dtype="int16", channels=1) as stream:
+            rec = vosk.KaldiRecognizer(self.model, self.samplerate)
             print("Escuchando...")
             while True:
                 data, _ = stream.read(4096)  # Captura el bloque de datos
