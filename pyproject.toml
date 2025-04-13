@@ -14,7 +14,7 @@ dependencies = ["PyQt5"]
 # Configuración del sistema de construcción
 [build-system]
 requires = ["pyinstaller","setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+build-backcd seend = "setuptools.build_meta"
 
 # Configuración adicional para setuptools
 [tool.setuptools]

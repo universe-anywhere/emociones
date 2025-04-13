@@ -46,6 +46,8 @@ class EmocionesApp(QMainWindow):
         chatBot_instance = getattr(self, "_chatBoot_instance", None)  # Comprobar si ya existe la instancia
         if not chatBot_instance:
             chatBot_instance = ChatBot()
+            setattr(self, "_chatBoot_instance", chatBot_instance)  # Guardar la instancia como atributo dinámico
+
         chatBot_instance.open_chatbot_dialog()  # Abrir el diálogo del chatbot    
 
 
