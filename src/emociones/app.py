@@ -6,13 +6,16 @@ from PyQt5.QtWidgets import (
 from emociones.UI.gallery import Gallery
 from emociones.UI.chatbot import ChatBot
 from emociones.UI.settings import Settings
+from emociones.IA.actionHandler import ActionHandler
 
 from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN, SCROLLBAR_WIDTH, WIDGET_ADDED_WIDTH)
 
 class EmocionesApp(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.chatBoot = ChatBot() # Inicializar ChatBot
+        self.chatBoot.speak("Bienvenido, le ruego un margen de 3 segundos cada vez que interactúe conmigo")  
+        self.IAHandler = ActionHandler(self.chatBoot)  # Inicializar ActionHandler
         self.buttons = {
             "Hablar con el Chatbot": self.open_chatbot_dialog,
             "Gestionar Galería": self.manage_gallery,
@@ -44,14 +47,11 @@ class EmocionesApp(QMainWindow):
         self.main_layout.addLayout(self.content_layout)
 
     def open_chatbot_dialog(self):
-        # Usar una variable local para instanciar ChatBot
-        chatBot_instance = getattr(self, "_chatBoot_instance", None)  # Comprobar si ya existe la instancia
-        if not chatBot_instance:
-            chatBot_instance = ChatBot()
-            setattr(self, "_chatBoot_instance", chatBot_instance)  # Guardar la instancia como atributo dinámico
 
-        chatBot_instance.open_chatbot_dialog()  # Abrir el diálogo del chatbot    
-
+        transcribed_text = self.chatBoot.open_chatbot_dialog()  # Abrir el diálogo del chatbot    
+        print("Transcripción:", transcribed_text)  # Imprimir la transcripción
+        if (transcribed_text != ""):
+            self.IAHandler.handle_text(transcribed_text)  # Manejar la acción con ActionHandler
 
     def manage_gallery(self):
         # Usar una variable local para instanciar Gallery
@@ -79,6 +79,8 @@ def main():
     window.show()
     sys.exit(app.exec_())
 
+def __del__(self):
+    pass
 
 if __name__ == "__main__":
     main()

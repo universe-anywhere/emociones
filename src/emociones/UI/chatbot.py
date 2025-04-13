@@ -27,15 +27,18 @@ class ChatBot:
         print("Chat bot...")
         transcribed_text = self.listen_and_transcribe()
         print(f"Texto transcrito: {transcribed_text}")
+        return transcribed_text
 
     def speak(self, text):
         """Reproduce el texto dado por los altavoces."""
         self.engine.say(text)
         self.engine.runAndWait()
 
-    def listen_and_transcribe(self):
-        """Escucha al usuario y transcribe sin límite de tiempo."""
-        self.speak("Espere 3 segundos y diga algo...")  # Reproducir "Diga algo" por los altavoces
+    def listen_and_transcribe(self, texto=""):
+        if (texto != ""):
+            self.speak(texto)
+        else:  
+            self.speak("¿Qué puedo hacer por ti?")  
 
         # Escucha activa
         with sd.RawInputStream(samplerate=self.samplerate, blocksize=8000, dtype="int16", channels=1) as stream:

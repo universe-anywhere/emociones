@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="Sqlite" id="Project_3abd338" database="Sqlite" >
+	<schema name="Default" >
+		<table name="attribute" >
+			<comment><![CDATA[Definicion de los atributos de una entidad]]></comment>
+			<column name="attributeUUID" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[UUID para identificar la defiinicion de un atributo de una entidad]]></comment>
+			</column>
+			<column name="description" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Descripcion del atributo que se está definiendo para la entidad]]></comment>
+			</column>
+			<column name="entityUUID" type="text" jt="-1" >
+				<comment><![CDATA[Entidad a la que pertenece el atributo que se define]]></comment>
+			</column>
+			<index name="pk_attribute" unique="PRIMARY_KEY" >
+				<column name="attributeUUID" />
+			</index>
+			<index name="Idx_description" unique="NORMAL" >
+				<column name="description" />
+			</index>
+			<index name="sqlite_autoindex_attribute_2" unique="UNIQUE" >
+				<column name="entityUUID" />
+			</index>
+		</table>
+		<table name="attributeInstance" >
+			<comment><![CDATA[Instancia de un atributo para definir su valor]]></comment>
+			<column name="attributeInstanceUUID" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Identificador unico de la instancia del atributo]]></comment>
+			</column>
+			<column name="valueNum" type="numeric" jt="2" >
+				<comment><![CDATA[Valor numerico del atributo (si lo tiene)]]></comment>
+			</column>
+			<column name="valueText" type="text" length="250" jt="-1" >
+				<comment><![CDATA[Valor de texto del atributo (so lo tiene)]]></comment>
+			</column>
+			<column name="valueBlob" type="blob" jt="2004" >
+				<comment><![CDATA[Valor de Blob del atributo (si lo tiene)]]></comment>
+			</column>
+			<column name="attributeUUID" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Identificador de la definicion del atributo]]></comment>
+			</column>
+			<column name="entityInstanceUUID" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Identificador de la instancia de la entidad a la que pertenece la instancia del atributo]]></comment>
+			</column>
+			<index name="pk_attributeInstance" unique="PRIMARY_KEY" >
+				<column name="attributeInstanceUUID" />
+			</index>
+			<index name="sqlite_autoindex_attributeInstance_2" unique="UNIQUE" >
+				<column name="attributeUUID" />
+			</index>
+			<index name="sqlite_autoindex_attributeInstance_3" unique="UNIQUE" >
+				<column name="entityInstanceUUID" />
+			</index>
+		</table>
+		<table name="entity" >
+			<comment><![CDATA[Define las entidades del sistema]]></comment>
+			<column name="entityUUID" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[UUID unico para cada entidad]]></comment>
+			</column>
+			<column name="description" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Descripcion que identifica la entidad]]></comment>
+			</column>
+			<index name="pk_entity" unique="PRIMARY_KEY" >
+				<column name="entityUUID" />
+			</index>
+			<index name="sqlite_autoindex_entity_2" unique="UNIQUE" >
+				<column name="description" />
+			</index>
+			<fk name="Fk_entity" to_schema="Default" to_table="attribute" delete_action="cascade" >
+				<fk_column name="entityUUID" pk="entityUUID" />
+			</fk>
+			<fk name="Fk_entity_0" to_schema="Default" to_table="entityInstance" delete_action="cascade" >
+				<fk_column name="entityUUID" pk="entityUUID" />
+			</fk>
+			<fk name="Fk_entity_1" to_schema="Default" to_table="entityRelation" delete_action="cascade" >
+				<fk_column name="entityUUID" pk="entityUUID1" />
+			</fk>
+			<fk name="Fk_entity_2" to_schema="Default" to_table="entityRelation" delete_action="cascade" >
+				<fk_column name="entityUUID" pk="entityUUID2" />
+			</fk>
+		</table>
+		<table name="entityInstance" >
+			<comment><![CDATA[Instancia de tipo Entidad]]></comment>
+			<column name="entityInstanceUUID" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Identificador unico de la instancia de tipo entidad]]></comment>
+			</column>
+			<column name="description" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Descripción de la instancia de tipo entidad]]></comment>
+			</column>
+			<column name="entityUUID" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Identificador unico de la definición del tipo de entidad]]></comment>
+			</column>
+			<index name="pk_entityInstance" unique="PRIMARY_KEY" >
+				<column name="entityInstanceUUID" />
+			</index>
+			<index name="sqlite_autoindex_entityInstance_2" unique="UNIQUE" >
+				<column name="description" />
+			</index>
+			<index name="sqlite_autoindex_entityInstance_3" unique="UNIQUE" >
+				<column name="entityUUID" />
+			</index>
+		</table>
+		<table name="entityRelation" >
+			<comment><![CDATA[Relación entre entidades]]></comment>
+			<column name="entityRelationUUID" type="text" jt="-1" mandatory="y" />
+			<column name="entityUUID1" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Identificador de la primera entidad que interviene en la relación]]></comment>
+			</column>
+			<column name="entityUUID2" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Identificador de la segunda entidad que interviene en la relación]]></comment>
+			</column>
+			<column name="description" type="text" jt="-1" mandatory="y" >
+				<comment><![CDATA[Definición de la relación entre las dos entidades implicadas]]></comment>
+			</column>
+			<index name="pk_entityRelation" unique="PRIMARY_KEY" >
+				<column name="entityRelationUUID" />
+			</index>
+			<index name="sqlite_autoindex_entityRelation_2" unique="UNIQUE" >
+				<column name="entityUUID1" />
+			</index>
+			<index name="sqlite_autoindex_entityRelation_3" unique="UNIQUE" >
+				<column name="entityUUID2" />
+			</index>
+		</table>
+	</schema>
+	<connector name="emociones" database="Sqlite" driver_class="org.sqlite.JDBC" driver_jar="sqlite-jdbc-3.27.2.1.jar" driver_desc="Standard" host="localhost" port="7210" instance="F:/Proyectos/emociones/src/emociones/data/emociones.sqlite" />
+	<layout name="Default Layout" id="Layout_1c7d7fe" show_relation="columns" >
+		<entity schema="Default" name="attribute" color="008000" x="288" y="48" />
+		<entity schema="Default" name="entityInstance" color="C1D8EE" x="576" y="256" />
+		<entity schema="Default" name="entityRelation" color="808000" x="48" y="288" />
+		<entity schema="Default" name="entity" color="008000" x="80" y="48" />
+		<entity schema="Default" name="attributeInstance" color="3986C1" x="560" y="64" />
+		<script name="SQL_Editor" id="Editor_1b3cd3a" language="SQL" >
+			<string><![CDATA[CREATE TABLE entity ( 
+	entityUUID           text NOT NULL  PRIMARY KEY  ,
+	description          text NOT NULL    ,
+	CONSTRAINT unq_description UNIQUE ( description ) 
+ ) ;
+]]></string>
+		</script>
+		<script name="SQL_Editor_002" id="Editor_4ee6c6a" language="SQL" >
+			<string><![CDATA[DROP TABLE IF EXISTS entity;
+DROP TABLE IF EXISTS attribute;
+DROP TABLE IF EXISTS attributeInstance;
+DROP TABLE IF EXISTS entityInstance;
+DROP TABLE IF EXISTS entityRelation;]]></string>
+		</script>
+		<script name="SQL_Editor_003" id="Editor_36f0460" language="SQL" >
+			<string><![CDATA[BEGIN TRANSACTION;
+PRAGMA foreign_keys = ON;
+
+PRAGMA writable_schema = 1;
+
+UPDATE SQLITE_MASTER SET SQL = 'CREATE TABLE entityInstance ( 
+	entityInstanceUUID   text NOT NULL  PRIMARY KEY  ,
+	description          text NOT NULL    ,
+	entityUUID           text NOT NULL    ,
+	CONSTRAINT Idx_entityInstance UNIQUE ( description ) ,
+	CONSTRAINT Unq_entityInstance_entityUUID UNIQUE ( entityUUID ) 
+ ) ' WHERE NAME='entityInstance';
+
+PRAGMA writable_schema = 1;
+
+END TRANSACTION;
+]]></string>
+		</script>
+	</layout>
+</project>

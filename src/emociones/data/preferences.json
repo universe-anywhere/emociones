@@ -4,9 +4,15 @@
         "recursive_loading": true,
         "supported_extensions": [".png", ".jpg", ".jpeg", ".bmp", ".gif"]
     },
+
     "chatBoot": {
         "model_path": "data\\vosk-model-small-es-0.42",
         "rate": 130,
         "samplerate": 42000
+    },
+
+    "dataBase": {
+        "db_path": "data\\emociones.sqlite"
     }
+
 }
