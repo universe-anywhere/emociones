@@ -1,4 +1,5 @@
 import os
+import mimetypes
 from PyQt5.QtWidgets import QScrollArea, QLabel, QGridLayout, QWidget, QFileDialog
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
@@ -24,16 +25,16 @@ class Gallery:
 
             # Obtiene las rutas de las imágenes según el modo de carga
             if recursive_loading:
-                print("Cargando imágenes recursivamente...")
-                image_paths = self.get_image_paths_recursively(folder_path)
+                print("Cargando archivos recursivamente...")
+                file_paths = self.get_file_paths_recursively(folder_path)
             else:
-                print("Cargando imágenes de la carpeta seleccionada...")
-                image_paths = self.get_image_paths(folder_path)
+                print("Cargando archivos de la carpeta seleccionada...")
+                file_paths = self.get_file_paths(folder_path)
 
             # Procesa las imágenes si se encontraron
-            if image_paths:
+            if file_paths:
                 self.create_gallery()
-                self.add_images_to_gallery(image_paths)
+                self.add_files_to_gallery(file_paths)
             else:
                 print("No se encontraron imágenes en la carpeta seleccionada.")
 
@@ -47,26 +48,52 @@ class Gallery:
                     widget.deleteLater()
         self.current_image_widgets = []  # Limpia la lista de widgets de imágenes
 
-    def get_image_paths(self, folder_path):
-        # Obtener extensiones soportadas desde las preferencias
-        supported_extensions = preferences["gallery"]["supported_extensions"]
-        return [
-            os.path.join(folder_path, file)
-            for file in os.listdir(folder_path)
-            if any(file.lower().endswith(ext) for ext in supported_extensions)
-        ]
+    def get_File(self, file_path):
+        # Verificar si es un archivo (y no una carpeta)
+        if not os.path.isfile(file_path):
+            return None
 
-    def get_image_paths_recursively(self, folder_path):
-        # Obtener extensiones soportadas desde las preferencias
-        supported_extensions = preferences["gallery"]["supported_extensions"]
+        # Verifica si el archivo es una imagen o un video
+        file_type, _ = mimetypes.guess_type(file_path)
+        if file_type and (file_type.startswith('image') or file_type.startswith('video')):
+            return file_path
+        return None
+    
+    def get_file_paths(self, folder_path):
         result = []
-        for root, _, files in os.walk(folder_path):
-            result.extend(
-                os.path.join(root, file)
-                for file in files
-                if any(file.lower().endswith(ext) for ext in supported_extensions)
-            )
+
+        # Listar solo los archivos en el directorio actual
+        for file in os.listdir(folder_path):
+            # Obtener la ruta completa del archivo
+            file_path = os.path.join(folder_path, file)
+            add_file = self.get_File(file_path)
+            if add_file:
+                # Agregar el archivo a la lista de resultados
+                result.append(add_file)
+            else:
+                print(f"El archivo {file_path} no es una imagen o un video válido.")
+                continue
+
         return result
+
+    def get_file_paths_recursively(self, folder_path):
+        # Obtener extensiones soportadas desde las preferencias
+        result = []
+
+        for root, _, files in os.walk(folder_path):
+            for file in files:
+                # Obtener la ruta completa del archivo
+                file_path = os.path.join(root, file)
+
+                add_file = self.get_File(file_path)
+                if add_file:
+                    # Agregar el archivo a la lista de resultados
+                    result.append(add_file)
+                else:
+                    print(f"El archivo {file_path} no es una imagen o un video válido.")
+                    continue
+
+            return result
     
     def create_gallery(self):
         # Crea el área de desplazamiento para la galería
@@ -81,13 +108,13 @@ class Gallery:
         self.scroll_area.setWidget(gallery_widget)
         self.content_layout.addWidget(self.scroll_area)
 
-    def add_images_to_gallery(self, image_paths):
+    def add_files_to_gallery(self, file_paths):
         # Agrega las imágenes seleccionadas a la galería
-        for image_path in image_paths:
+        for file_path in file_paths:
             try:
-                pixmap = QPixmap(image_path)
+                pixmap = QPixmap(file_path)
                 if pixmap.isNull():
-                    print(f"Error: No se pudo cargar la imagen {image_path}")
+                    print(f"Error: No se pudo cargar el archivo {file_path}")
                     continue
 
                 # Escalar la imagen
@@ -101,7 +128,7 @@ class Gallery:
                 # Almacena el widget de la imagen
                 self.current_image_widgets.append(label)
             except Exception as e:
-                print(f"Error al cargar la imagen {image_path}: {e}")
+                print(f"Error al cargar la imagen {file_path}: {e}")
 
         self.show_gallery()
 

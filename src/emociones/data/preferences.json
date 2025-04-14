@@ -1,8 +1,7 @@
 {
     "gallery": {
-        "galleryPath": "F:\\Datos conservar\\álbum familiar",
-        "recursive_loading": true,
-        "supported_extensions": [".png", ".jpg", ".jpeg", ".bmp", ".gif"]
+        "galleryPath": "F:\\Datos conservar\\álbum familiar\\2008\\2008-10-14 Gonzalo y Gabi",
+        "recursive_loading": true
     },
 
     "chatBoot": {

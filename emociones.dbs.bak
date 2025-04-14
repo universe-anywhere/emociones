@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project name="Sqlite" id="Project_3abd338" database="Sqlite" >
+<project name="emociones" id="Project_3abd338" database="Sqlite" >
 	<schema name="Default" >
 		<table name="attribute" >
 			<comment><![CDATA[Definicion de los atributos de una entidad]]></comment>
@@ -18,9 +18,12 @@
 			<index name="Idx_description" unique="NORMAL" >
 				<column name="description" />
 			</index>
-			<index name="sqlite_autoindex_attribute_2" unique="UNIQUE" >
+			<index name="idx_entityUUID" unique="NORMAL" >
 				<column name="entityUUID" />
 			</index>
+			<fk name="Fk_attribute" to_schema="Default" to_table="entity" delete_action="cascade" >
+				<fk_column name="entityUUID" pk="entityUUID" />
+			</fk>
 		</table>
 		<table name="attributeInstance" >
 			<comment><![CDATA[Instancia de un atributo para definir su valor]]></comment>
@@ -45,12 +48,18 @@
 			<index name="pk_attributeInstance" unique="PRIMARY_KEY" >
 				<column name="attributeInstanceUUID" />
 			</index>
-			<index name="sqlite_autoindex_attributeInstance_2" unique="UNIQUE" >
+			<index name="idx_entityInstance_attributeUUID" unique="NORMAL" >
 				<column name="attributeUUID" />
 			</index>
-			<index name="sqlite_autoindex_attributeInstance_3" unique="UNIQUE" >
+			<index name="idx_entityInstance_entityInstanceUUID" unique="NORMAL" >
 				<column name="entityInstanceUUID" />
 			</index>
+			<fk name="Fk_attributeInstance" to_schema="Default" to_table="entityInstance" delete_action="cascade" >
+				<fk_column name="entityInstanceUUID" pk="entityInstanceUUID" />
+			</fk>
+			<fk name="Fk_attributeInstance" to_schema="Default" to_table="attribute" delete_action="cascade" >
+				<fk_column name="attributeUUID" pk="attributeUUID" />
+			</fk>
 		</table>
 		<table name="entity" >
 			<comment><![CDATA[Define las entidades del sistema]]></comment>
@@ -66,26 +75,11 @@
 			<index name="sqlite_autoindex_entity_2" unique="UNIQUE" >
 				<column name="description" />
 			</index>
-			<fk name="Fk_entity" to_schema="Default" to_table="attribute" delete_action="cascade" >
-				<fk_column name="entityUUID" pk="entityUUID" />
-			</fk>
-			<fk name="Fk_entity_0" to_schema="Default" to_table="entityInstance" delete_action="cascade" >
-				<fk_column name="entityUUID" pk="entityUUID" />
-			</fk>
-			<fk name="Fk_entity_1" to_schema="Default" to_table="entityRelation" delete_action="cascade" >
-				<fk_column name="entityUUID" pk="entityUUID1" />
-			</fk>
-			<fk name="Fk_entity_2" to_schema="Default" to_table="entityRelation" delete_action="cascade" >
-				<fk_column name="entityUUID" pk="entityUUID2" />
-			</fk>
 		</table>
 		<table name="entityInstance" >
 			<comment><![CDATA[Instancia de tipo Entidad]]></comment>
 			<column name="entityInstanceUUID" type="text" jt="-1" mandatory="y" >
 				<comment><![CDATA[Identificador unico de la instancia de tipo entidad]]></comment>
-			</column>
-			<column name="description" type="text" jt="-1" mandatory="y" >
-				<comment><![CDATA[Descripción de la instancia de tipo entidad]]></comment>
 			</column>
 			<column name="entityUUID" type="text" jt="-1" mandatory="y" >
 				<comment><![CDATA[Identificador unico de la definición del tipo de entidad]]></comment>
@@ -93,12 +87,12 @@
 			<index name="pk_entityInstance" unique="PRIMARY_KEY" >
 				<column name="entityInstanceUUID" />
 			</index>
-			<index name="sqlite_autoindex_entityInstance_2" unique="UNIQUE" >
-				<column name="description" />
-			</index>
-			<index name="sqlite_autoindex_entityInstance_3" unique="UNIQUE" >
+			<index name="idx_entityInstance_entityUUID" unique="NORMAL" >
 				<column name="entityUUID" />
 			</index>
+			<fk name="Fk_entityInstance" to_schema="Default" to_table="entity" delete_action="cascade" >
+				<fk_column name="entityUUID" pk="entityUUID" />
+			</fk>
 		</table>
 		<table name="entityRelation" >
 			<comment><![CDATA[Relación entre entidades]]></comment>
@@ -121,14 +115,18 @@
 			<index name="sqlite_autoindex_entityRelation_3" unique="UNIQUE" >
 				<column name="entityUUID2" />
 			</index>
+			<fk name="Fk_entityRelation" to_schema="Default" to_table="entity" delete_action="cascade" >
+				<fk_column name="entityUUID2" pk="entityUUID" />
+				<fk_column name="entityUUID1" pk="entityUUID" />
+			</fk>
 		</table>
 	</schema>
 	<connector name="emociones" database="Sqlite" driver_class="org.sqlite.JDBC" driver_jar="sqlite-jdbc-3.27.2.1.jar" driver_desc="Standard" host="localhost" port="7210" instance="F:/Proyectos/emociones/src/emociones/data/emociones.sqlite" />
 	<layout name="Default Layout" id="Layout_1c7d7fe" show_relation="columns" >
-		<entity schema="Default" name="attribute" color="008000" x="288" y="48" />
-		<entity schema="Default" name="entityInstance" color="C1D8EE" x="576" y="256" />
-		<entity schema="Default" name="entityRelation" color="808000" x="48" y="288" />
 		<entity schema="Default" name="entity" color="008000" x="80" y="48" />
+		<entity schema="Default" name="entityRelation" color="808000" x="48" y="288" />
+		<entity schema="Default" name="entityInstance" color="C1D8EE" x="576" y="256" />
+		<entity schema="Default" name="attribute" color="008000" x="288" y="48" />
 		<entity schema="Default" name="attributeInstance" color="3986C1" x="560" y="64" />
 		<script name="SQL_Editor" id="Editor_1b3cd3a" language="SQL" >
 			<string><![CDATA[CREATE TABLE entity ( 
@@ -138,6 +136,9 @@
  ) ;
 ]]></string>
 		</script>
+		<script name="SQL_Editor_001" id="Editor_133998e" language="SQL" >
+			<string><![CDATA[select * from entityInstance]]></string>
+		</script>
 		<script name="SQL_Editor_002" id="Editor_4ee6c6a" language="SQL" >
 			<string><![CDATA[DROP TABLE IF EXISTS entity;
 DROP TABLE IF EXISTS attribute;
@@ -145,24 +146,121 @@ DROP TABLE IF EXISTS attributeInstance;
 DROP TABLE IF EXISTS entityInstance;
 DROP TABLE IF EXISTS entityRelation;]]></string>
 		</script>
-		<script name="SQL_Editor_003" id="Editor_36f0460" language="SQL" >
-			<string><![CDATA[BEGIN TRANSACTION;
-PRAGMA foreign_keys = ON;
+		<script name="Toas las instancias de Entidades y Atributes" id="Editor_40f4571" language="SQL" >
+			<string><![CDATA[
+select e.description as entity, a.description as attribute, ei.entityInstanceUUID, ai.attributeInstanceUUID, ai.valueText
+from 
+	entity e
+	join attribute a on (a.entityUUID = e.entityUUID)
+	join entityInstance ei on (ei.entityUUID = e.entityUUID)
+	join attributeInstance ai on (ai.attributeUUID = a.attributeUUID) and (ai.entityInstanceUUID = ei.entityInstanceUUID)]]></string>
+		</script>
+		<script name="attribute" id="Editor_4e0b47c" language="SQL" >
+			<string><![CDATA[INSERT INTO attribute
+	( attributeUUID, description, entityUUID) VALUES ( "kk", "kk", "a2db680a-da2b-4034-a5ab-9b4a4d8ec95c" );]]></string>
+		</script>
+		<script name="attributeInstance" id="Editor_58bbfdb" language="SQL" >
+			<string><![CDATA[INSERT INTO attributeInstance
+	( attributeInstanceUUID, valueNum, valueText, valueBlob, attributeUUID, entityInstanceUUID) VALUES ( ?, ?, ?, ?, ?, ? );]]></string>
+		</script>
+		<script name="attributeInstance_001" id="Editor_436b18b" language="SQL" >
+			<string><![CDATA[PRAGMA foreign_keys=on;
+CREATE TABLE attributeInstance ( 
+	attributeInstanceUUID text NOT NULL  PRIMARY KEY  ,
+	valueNum             numeric     ,
+	valueText            text     ,
+	valueBlob            blob     ,
+	attributeUUID        text NOT NULL    ,
+	entityInstanceUUID   text NOT NULL    ,
+	CONSTRAINT sqlite_autoindex_attributeInstance_2 UNIQUE ( attributeUUID ) ,
+	CONSTRAINT sqlite_autoindex_attributeInstance_3 UNIQUE ( entityInstanceUUID ) ,
+	FOREIGN KEY ( entityInstanceUUID ) REFERENCES entityInstance( entityInstanceUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( attributeUUID ) REFERENCES attribute( attributeUUID ) ON DELETE CASCADE 
+ );]]></string>
+		</script>
+		<script name="attributeInstance_002" id="Editor_4ccae2b" language="SQL" >
+			<string><![CDATA[PRAGMA foreign_keys=on;
 
-PRAGMA writable_schema = 1;
+CREATE TABLE attributeInstance ( 
+	attributeInstanceUUID text NOT NULL  PRIMARY KEY  ,
+	valueNum             numeric     ,
+	valueText            text     ,
+	valueBlob            blob     ,
+	attributeUUID        text NOT NULL    ,
+	entityInstanceUUID   text NOT NULL    ,
+	FOREIGN KEY ( entityInstanceUUID ) REFERENCES entityInstance( entityInstanceUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( attributeUUID ) REFERENCES attribute( attributeUUID ) ON DELETE CASCADE 
+ );
 
-UPDATE SQLITE_MASTER SET SQL = 'CREATE TABLE entityInstance ( 
-	entityInstanceUUID   text NOT NULL  PRIMARY KEY  ,
-	description          text NOT NULL    ,
-	entityUUID           text NOT NULL    ,
-	CONSTRAINT Idx_entityInstance UNIQUE ( description ) ,
-	CONSTRAINT Unq_entityInstance_entityUUID UNIQUE ( entityUUID ) 
- ) ' WHERE NAME='entityInstance';
+CREATE INDEX idx_entityInstance_attributeUUID ON attributeInstance ( attributeUUID );
 
-PRAGMA writable_schema = 1;
-
-END TRANSACTION;
+CREATE INDEX idx_entityInstance_entityInstanceUUID ON attributeInstance ( entityInstanceUUID );
 ]]></string>
+		</script>
+		<script name="attributeInstance_003" id="Editor_3dfd360" language="SQL" >
+			<string><![CDATA[CREATE TABLE attributeInstance ( 
+	attributeInstanceUUID text NOT NULL  PRIMARY KEY  ,
+	valueNum             numeric     ,
+	valueText            text     ,
+	valueBlob            blob     ,
+	attributeUUID        text NOT NULL    ,
+	entityInstanceUUID   text NOT NULL    ,
+	FOREIGN KEY ( entityInstanceUUID ) REFERENCES entityInstance( entityInstanceUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( attributeUUID ) REFERENCES attribute( attributeUUID ) ON DELETE CASCADE 
+ );
+
+CREATE INDEX idx_entityInstance_attributeUUID ON attributeInstance ( attributeUUID );
+
+CREATE INDEX idx_entityInstance_entityInstanceUUID ON attributeInstance ( entityInstanceUUID );
+]]></string>
+		</script>
+		<script name="attribute_001" id="Editor_4e5108a" language="SQL" >
+			<string><![CDATA[CREATE TABLE attribute ( 
+	attributeUUID        text NOT NULL  PRIMARY KEY  ,
+	description          text NOT NULL    ,
+	entityUUID           text     ,
+	FOREIGN KEY ( entityUUID ) REFERENCES entity( entityUUID ) ON DELETE CASCADE 
+ );
+
+CREATE INDEX Idx_description ON attribute ( description );
+
+CREATE INDEX idx_entityUUID ON attribute ( entityUUID );
+]]></string>
+		</script>
+		<script name="entity" id="Editor_1688d93" language="SQL" >
+			<string><![CDATA[select * from entity;
+select * from attribute;
+
+delete from attribute;
+delete from entity;]]></string>
+		</script>
+		<script name="entityInstance" id="Editor_5432da1" language="SQL" >
+			<string><![CDATA[PRAGMA foreign_keys=on;
+drop table entityInstance;]]></string>
+		</script>
+		<script name="entityInstance_001" id="Editor_357834c" language="SQL" >
+			<string><![CDATA[PRAGMA foreign_keys=on;
+
+CREATE TABLE entityInstance ( 
+	entityInstanceUUID   text NOT NULL  PRIMARY KEY  ,
+	entityUUID           text NOT NULL    ,
+	FOREIGN KEY ( entityUUID ) REFERENCES entity( entityUUID ) ON DELETE CASCADE 
+ );
+
+CREATE INDEX idx_entityInstance_entityUUID ON entityInstance ( entityUUID );
+]]></string>
+		</script>
+		<script name="entityRelation_001" id="Editor_478a0f3" language="SQL" >
+			<string><![CDATA[PRAGMA foreign_keys=on;
+CREATE TABLE entityRelation ( 
+	entityRelationUUID   text NOT NULL  PRIMARY KEY  ,
+	entityUUID1          text NOT NULL    ,
+	entityUUID2          text NOT NULL    ,
+	description          text NOT NULL    ,
+	CONSTRAINT sqlite_autoindex_entityRelation_2 UNIQUE ( entityUUID1 ) ,
+	CONSTRAINT sqlite_autoindex_entityRelation_3 UNIQUE ( entityUUID2 ) ,
+	FOREIGN KEY ( entityUUID2, entityUUID1 ) REFERENCES entity( entityUUID, entityUUID ) ON DELETE CASCADE 
+ );]]></string>
 		</script>
 	</layout>
 </project>

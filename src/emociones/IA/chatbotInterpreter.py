@@ -30,6 +30,10 @@ class ChatbotInterpreter:
                 "parameters": {
                     "entity": "entidad"
                 }
+            },
+            "update_collection": {
+                "terms": ["actualizar", "coileccion"],
+                "parameters": {}
             }
         }
 
@@ -54,7 +58,7 @@ class ChatbotInterpreter:
             # Actualizar la mejor coincidencia:
             # 1. Si tiene más coincidencias.
             # 2. En caso de empate, se queda con la acción que tiene menos términos definidos.
-            if matches > max_matches or (matches == max_matches and len(terms) < min_terms):
+            if matches > max_matches or (matches > 0 and matches == max_matches and len(terms) < min_terms):
                 max_matches = matches
                 min_terms = len(terms)
                 best_match["action"] = action
