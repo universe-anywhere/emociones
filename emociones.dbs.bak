@@ -123,11 +123,10 @@
 	</schema>
 	<connector name="emociones" database="Sqlite" driver_class="org.sqlite.JDBC" driver_jar="sqlite-jdbc-3.27.2.1.jar" driver_desc="Standard" host="localhost" port="7210" instance="F:/Proyectos/emociones/src/emociones/data/emociones.sqlite" />
 	<layout name="Default Layout" id="Layout_1c7d7fe" show_relation="columns" >
-		<entity schema="Default" name="entity" color="008000" x="80" y="48" />
-		<entity schema="Default" name="entityRelation" color="808000" x="48" y="288" />
-		<entity schema="Default" name="entityInstance" color="C1D8EE" x="576" y="256" />
-		<entity schema="Default" name="attribute" color="008000" x="288" y="48" />
-		<entity schema="Default" name="attributeInstance" color="3986C1" x="560" y="64" />
+		<entity schema="Default" name="entity" color="008000" x="48" y="48" />
+		<entity schema="Default" name="entityInstance" color="C1D8EE" x="544" y="256" />
+		<entity schema="Default" name="attribute" color="008000" x="256" y="48" />
+		<entity schema="Default" name="attributeInstance" color="3986C1" x="528" y="64" />
 		<script name="SQL_Editor" id="Editor_1b3cd3a" language="SQL" >
 			<string><![CDATA[CREATE TABLE entity ( 
 	entityUUID           text NOT NULL  PRIMARY KEY  ,
@@ -137,7 +136,8 @@
 ]]></string>
 		</script>
 		<script name="SQL_Editor_001" id="Editor_133998e" language="SQL" >
-			<string><![CDATA[select * from entityInstance]]></string>
+			<string><![CDATA[delete from entityInstance;
+select * from attributeInstance;]]></string>
 		</script>
 		<script name="SQL_Editor_002" id="Editor_4ee6c6a" language="SQL" >
 			<string><![CDATA[DROP TABLE IF EXISTS entity;
@@ -211,8 +211,7 @@ CREATE INDEX idx_entityInstance_entityInstanceUUID ON attributeInstance ( entity
 
 CREATE INDEX idx_entityInstance_attributeUUID ON attributeInstance ( attributeUUID );
 
-CREATE INDEX idx_entityInstance_entityInstanceUUID ON attributeInstance ( entityInstanceUUID );
-]]></string>
+CREATE INDEX idx_entityInstance_entityInstanceUUID ON attributeInstance ( entityInstanceUUID );]]></string>
 		</script>
 		<script name="attribute_001" id="Editor_4e5108a" language="SQL" >
 			<string><![CDATA[CREATE TABLE attribute ( 
@@ -224,8 +223,7 @@ CREATE INDEX idx_entityInstance_entityInstanceUUID ON attributeInstance ( entity
 
 CREATE INDEX Idx_description ON attribute ( description );
 
-CREATE INDEX idx_entityUUID ON attribute ( entityUUID );
-]]></string>
+CREATE INDEX idx_entityUUID ON attribute ( entityUUID );]]></string>
 		</script>
 		<script name="entity" id="Editor_1688d93" language="SQL" >
 			<string><![CDATA[select * from entity;

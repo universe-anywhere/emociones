@@ -1,5 +1,5 @@
 import spacy
-from emociones.utils.log import log_info
+from emociones.utils.log import logInfo
 
 class ChatbotInterpreter:
     def __init__(self, model='es_core_news_sm'):  # Modelo para español
@@ -11,7 +11,7 @@ class ChatbotInterpreter:
         # Procesar el texto con spaCy
         doc = self.nlp(text.lower())
         tokenized_text = [token.text for token in doc]  # Lista de palabras extraídas del texto
-        log_info(f"Texto tokenizado: {tokenized_text}")  # Para depuración
+        logInfo(f"Texto tokenizado: {tokenized_text}")  # Para depuración
 
         # Diccionario para almacenar la mejor acción y parámetros asociados
         best_match = {"action": None, "parameters": {}}
@@ -22,7 +22,7 @@ class ChatbotInterpreter:
             terms = config["terms"]
             # Contar los términos que coinciden en el texto
             matches = sum(1 for term in terms if term in tokenized_text)
-            log_info(f"Acción: {action}, Coincidencias: {matches}, Términos definidos: {len(terms)}")  # Para depuración
+            logInfo(f"Acción: {action}, Coincidencias: {matches}, Términos definidos: {len(terms)}")  # Para depuración
             
             # Actualizar la mejor coincidencia:
             # 1. Si tiene más coincidencias.

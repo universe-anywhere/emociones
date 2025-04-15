@@ -10,7 +10,7 @@ from emociones.UI.settings import Settings
 from emociones.IA.userActionHandler import UserActionHandler
 from emociones.IA.developmentActionHandler import DevelopmentActionHandler
 from emociones.IA.interpreterTermsConfig import development_terms_to_actions, user_terms_to_actions
-from emociones.utils.log import log_info
+from emociones.utils.log import logInfo
 from emociones.preferences import preferences
 
 
@@ -22,12 +22,12 @@ class EmocionesApp(QMainWindow):
         self.buttons = {}
         if (preferences["config"]["developmentMode"]):
             self.developmentActionHandler = DevelopmentActionHandler()
-            self.buttons["ChatBot Desarrolladores"] = lambda: self.open_chatbot_dialog(self.developmentActionHandler)
+            self.buttons["ChatBot Desarrolladores"] = lambda: self.openChatbotDialog(self.developmentActionHandler)
 
         self.buttons.update({
-            "Hablar con el Chatbot": lambda: self.open_chatbot_dialog(self.userActionHandler),
-            "Gestionar Galería": lambda: self.manage_gallery(),
-            "Ajustes": lambda: self.open_settings(),  # Otro ejemplo
+            "Hablar con el Chatbot": lambda: self.openChatbotDialog(self.userActionHandler),
+            "Gestionar Galería": lambda: self.manageGallery(),
+            "Ajustes": lambda: self.openSettings(),  # Otro ejemplo
         })
 
         self.setWindowTitle("Emociones (Fotos y Videos)")
@@ -54,31 +54,31 @@ class EmocionesApp(QMainWindow):
         self.content_layout = QVBoxLayout()
         self.main_layout.addLayout(self.content_layout)
 
-    def open_chatbot_dialog(self, iaHandler):
+    def openChatbotDialog(self, iaHandler):
 
-        transcribed_text = app_context.chatBoot.open_chatbot_dialog()  # Abrir el diálogo del chatbot    
-        log_info("Texto transcrito: " + transcribed_text)  # Registrar el texto transcrito
+        transcribed_text = app_context.chatBoot.openChatbotDialog()  # Abrir el diálogo del chatbot    
+        logInfo("Texto transcrito: " + transcribed_text)  # Registrar el texto transcrito
         if (transcribed_text != ""):
-            iaHandler.handle_text(transcribed_text)  # Manejar la acción con ActionHandler
+            iaHandler.handleText(transcribed_text)  # Manejar la acción con ActionHandler
 
-    def manage_gallery(self):
+    def manageGallery(self):
         # Usar una variable local para instanciar Gallery
         gallery_instance = getattr(self, "_gallery_instance", None)  # Comprobar si ya existe la instancia
         if not gallery_instance:
             gallery_instance = Gallery(self.content_layout)
             setattr(self, "_gallery_instance", gallery_instance)  # Guardar la instancia como atributo dinámico
-        gallery_instance.open_folder_dialog()
+        gallery_instance.openFolderDialog()
 
     def resizeEvent(self, event):
         # Verificar si existe _gallery_instance y ajustarla al redimensionar
         gallery_instance = getattr(self, "_gallery_instance", None)  # Obtener la instancia dinámica
         if gallery_instance and hasattr(gallery_instance, 'gallery_layout'):
-            gallery_instance.show_gallery()  # Ajustar la galería
+            gallery_instance.showGallery()  # Ajustar la galería
         super().resizeEvent(event)
 
-    def open_settings(self):
+    def openSettings(self):
         settings_instance = Settings(self)
-        settings_instance.open_settings()
+        settings_instance.openSettings()
 
 def main():
     import sys

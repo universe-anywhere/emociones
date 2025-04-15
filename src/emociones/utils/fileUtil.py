@@ -5,9 +5,9 @@ import mimetypes
 import cv2
 from PIL import Image
 from emociones.constants import (IMAGE, VIDEO, GIF_MAX_FRAMES)
-from emociones.utils.log import log_info, log_error, log_warning
+from emociones.utils.log import logInfo, logError, logWarning
 
-def calcular_hash(filePath):
+def calculateHash(filePath):
     """
     Calcula la firma hash SHA-256 de un archivo.
 
@@ -22,21 +22,21 @@ def calcular_hash(filePath):
         sha256_hash = hashlib.sha256()
 
         # Abrir el archivo en modo binario
-        log_info(f"Calculando hash para el archivo: {filePath}")
+        logInfo(f"Calculando hash para el archivo: {filePath}")
         with open(filePath, "rb") as file:
             # Leer el archivo en bloques para evitar problemas de memoria con archivos grandes
             for bloque in iter(lambda: file.read(4096), b""):
                 sha256_hash.update(bloque)
 
-        log_info(f"Firma hash calculada: {sha256_hash.hexdigest()}")
+        logInfo(f"Firma hash calculada: {sha256_hash.hexdigest()}")
         # Devolver el hash en formato hexadecimal
         return sha256_hash.hexdigest()
 
     except FileNotFoundError:
-        log_error(f"El archivo '{filePath}' no fue encontrado.")
+        logError(f"El archivo '{filePath}' no fue encontrado.")
         return None
     except Exception as e:
-        log_error(f"Al calcular el hash: {e}")
+        logError(f"Al calcular el hash: {e}")
         return None
 
 def getFileName(file_path):
@@ -72,7 +72,7 @@ def generateGifFromMovie(video_path):
         video = cv2.VideoCapture(video_path)
 
         if not video.isOpened():
-            log_warning(f"No se pudo abrir el archivo de video {video_path}")
+            logWarning(f"No se pudo abrir el archivo de video {video_path}")
             return None
 
         frames = []
@@ -89,7 +89,7 @@ def generateGifFromMovie(video_path):
             success, frame = video.read()
 
             if not success:
-                log_warning(f"No se pudo leer el fotograma {i} del video {video_path}")
+                logWarning(f"No se pudo leer el fotograma {i} del video {video_path}")
                 break
 
             # Convertir el fotograma de BGR (OpenCV) a RGB (Pillow)
@@ -108,15 +108,15 @@ def generateGifFromMovie(video_path):
                 duration=500,  # 500 milisegundos = 0.5 segundos por fotograma
                 loop=0  # Número de repeticiones (0 = infinito)
             )
-            log_info(f"GIF generado correctamente en: {gif_path}")
+            logInfo(f"GIF generado correctamente en: {gif_path}")
             return gif_path
         else:
-            log_warning(f"No se pudieron obtener suficientes fotogramas para generar el GIF.")
+            logWarning(f"No se pudieron obtener suficientes fotogramas para generar el GIF.")
             return None
     finally:
         video.release()
 
-def is_valid_file(file_path):
+def isValidFile(file_path):
     # Verificar si es un archivo (y no una carpeta)
     if not os.path.isfile(file_path):
         return None
@@ -124,7 +124,7 @@ def is_valid_file(file_path):
     # Verifica si el archivo es una imagen o un video
     file_type, _ = mimetypes.guess_type(file_path)
 
-    log_info(f"Tipo de archivo: {file_type} - Archivo: {file_path}")
+    logInfo(f"Tipo de archivo: {file_type} - Archivo: {file_path}")
     if file_type and file_type.startswith(IMAGE):
         return True, IMAGE
     elif file_type and file_type.startswith(VIDEO):

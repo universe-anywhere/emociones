@@ -1,7 +1,7 @@
 import os
 import sys
 
-def get_base_path():
+def getBasePath():
     """
     Obtiene la ruta base del proyecto dependiendo del entorno:
     - Si se ejecuta en un ejecutable empaquetado con PyInstaller, utiliza sys._MEIPASS.

@@ -1,25 +1,25 @@
 development_terms_to_actions = {
-    "create_attribute": {
+    "createAttribute": {
         "terms": ["crear", "atributo", "entidad", "en", "para"],
         "parameters": {
             "attribute": "atributo",  # Palabra clave que precede el valor
             "entity": "entidad"      # Palabra clave que precede el valor
         }
     },
-    "create_entity": {
+    "createEntity": {
         "terms": ["crear", "entidad"],
         "parameters": {
             "entity": "entidad"
         }
     },
-    "delete_attribute": {
+    "deleteAttribute": {
         "terms": ["eliminar", "atributo", "entidad"],
         "parameters": {
             "attribute": "atributo",
             "entity": "entidad"
         }
     },
-    "delete_entity": {
+    "deleteEntity": {
         "terms": ["eliminar", "entidad"],
         "parameters": {
             "entity": "entidad"

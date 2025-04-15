@@ -16,19 +16,19 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-def log_info(message):
+def logInfo(message):
     """Registra un mensaje de nivel INFO."""
     logging.info(message)
 
-def log_warning(message):
+def logWarning(message):
     """Registra un mensaje de nivel WARNING."""
     logging.warning(message)
 
-def log_debug(message):
+def logDebug(message):
     """Registra un mensaje de nivel DEBUG."""
     logging.debug(message)
 
-def log_error(message):
+def logError(message):
     """Registra un mensaje de nivel ERROR."""
     logging.error(message)
 
