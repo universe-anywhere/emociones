@@ -1,12 +1,13 @@
-from emociones.IA.chatbotInterpreter import ChatbotInterpreter
 from emociones.globals.globalVars import app_context
+from emociones.IA.chatbotInterpreter import ChatbotInterpreter
+from emociones.IA.interpreterTermsConfig import development_terms_to_actions
 from emociones.backend.collection import Collection
 from emociones.utils.log import log_info, log_warning
 
-class ActionHandler:
-    def __init__(self, terms_to_actions):
+class DevelopmentActionHandler:
+    def __init__(self):
         self.interpreter = ChatbotInterpreter()
-        self.terms_to_actions = terms_to_actions
+        self.terms_to_actions = development_terms_to_actions
 
     def handle_text(self, text):
         # Interpretar el texto
@@ -80,9 +81,6 @@ class ActionHandler:
                     app_context.chatBoot.speak("De acuerdo, no se eliminará el atributo")
             else:
                 app_context.chatBoot.speak("No he entendido bien la información para eliminar el atributo")
-        elif action == "update_collection":
-            collection = Collection()
-            collection.refreshCollection()
         else:
             # Caso para acciones desconocidas
             app_context.chatBoot.speak("Lo siento, te he entendido mal o no puedo realizar esa acción")
