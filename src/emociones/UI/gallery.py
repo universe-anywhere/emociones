@@ -1,10 +1,12 @@
 import os
 import mimetypes
 from PyQt5.QtWidgets import QScrollArea, QLabel, QGridLayout, QWidget, QFileDialog
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
-from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN,SCROLLBAR_WIDTH)
+from PyQt5.QtGui import QPixmap, QMovie
+from PyQt5.QtCore import Qt, QSize
+from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN,SCROLLBAR_WIDTH, IMAGE, VIDEO)
 from emociones.preferences import preferences
+from emociones.utils.fileUtil import getFileDescription, is_valid_file, generateGifFromMovie
+from emociones.utils.log import log_info, log_error, log_warning
 
 class Gallery:
     def __init__(self, content_layout):
@@ -25,10 +27,10 @@ class Gallery:
 
             # Obtiene las rutas de las imágenes según el modo de carga
             if recursive_loading:
-                print("Cargando archivos recursivamente...")
+                log_info("Cargando archivos recursivamente")
                 file_paths = self.get_file_paths_recursively(folder_path)
             else:
-                print("Cargando archivos de la carpeta seleccionada...")
+                log_info("Cargando archivos de la carpeta seleccionada")
                 file_paths = self.get_file_paths(folder_path)
 
             # Procesa las imágenes si se encontraron
@@ -36,7 +38,7 @@ class Gallery:
                 self.create_gallery()
                 self.add_files_to_gallery(file_paths)
             else:
-                print("No se encontraron imágenes en la carpeta seleccionada.")
+                log_warning("No se encontraron imágenes en la carpeta seleccionada.")
 
     def clear_content(self):
         # Limpia los widgets actuales en el área de contenido
@@ -48,16 +50,6 @@ class Gallery:
                     widget.deleteLater()
         self.current_image_widgets = []  # Limpia la lista de widgets de imágenes
 
-    def get_File(self, file_path):
-        # Verificar si es un archivo (y no una carpeta)
-        if not os.path.isfile(file_path):
-            return None
-
-        # Verifica si el archivo es una imagen o un video
-        file_type, _ = mimetypes.guess_type(file_path)
-        if file_type and (file_type.startswith('image') or file_type.startswith('video')):
-            return file_path
-        return None
     
     def get_file_paths(self, folder_path):
         result = []
@@ -66,12 +58,12 @@ class Gallery:
         for file in os.listdir(folder_path):
             # Obtener la ruta completa del archivo
             file_path = os.path.join(folder_path, file)
-            add_file = self.get_File(file_path)
-            if add_file:
+            valid_file = is_valid_file(file_path)
+            if valid_file and valid_file[0]:
                 # Agregar el archivo a la lista de resultados
-                result.append(add_file)
+                result.append(file_path)
             else:
-                print(f"El archivo {file_path} no es una imagen o un video válido.")
+                log_warning(f"El archivo {file_path} no es una imagen o un video válido.")
                 continue
 
         return result
@@ -85,12 +77,12 @@ class Gallery:
                 # Obtener la ruta completa del archivo
                 file_path = os.path.join(root, file)
 
-                add_file = self.get_File(file_path)
-                if add_file:
+                valid_file = is_valid_file(file_path)
+                if valid_file and valid_file[0]:
                     # Agregar el archivo a la lista de resultados
-                    result.append(add_file)
+                    result.append(file_path)
                 else:
-                    print(f"El archivo {file_path} no es una imagen o un video válido.")
+                    log_warning(f"El archivo {file_path} no es una imagen o un video válido.")
                     continue
 
             return result
@@ -109,28 +101,58 @@ class Gallery:
         self.content_layout.addWidget(self.scroll_area)
 
     def add_files_to_gallery(self, file_paths):
-        # Agrega las imágenes seleccionadas a la galería
+        # Agrega las imágenes o GIFs seleccionados a la galería
         for file_path in file_paths:
             try:
-                pixmap = QPixmap(file_path)
-                if pixmap.isNull():
-                    print(f"Error: No se pudo cargar el archivo {file_path}")
+                # Determinar el tipo MIME del archivo
+                file_type, _ = mimetypes.guess_type(file_path)
+                valid_file = is_valid_file(file_path)
+                if (valid_file is None):
+                    log_warning(f"El archivo {file_path} no es una imagen o un video válido.")
                     continue
-
-                # Escalar la imagen
-                scaled_height = int(MAX_IMAGE_WIDTH * pixmap.height() / pixmap.width())
-                scaled_pixmap = pixmap.scaled(MAX_IMAGE_WIDTH, scaled_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-
-                # Crear un QLabel para la imagen
+                # Crear un QLabel para el GIF
                 label = QLabel()
-                label.setPixmap(scaled_pixmap)
+                label.setToolTip(getFileDescription(file_path))
+                
+                # Verificar si es un GIF animado
+                if valid_file[1] == VIDEO:
+                    tempGif = generateGifFromMovie(file_path)
+                    # Cargar el GIF en un QMovie y asignarlo al QLabel
+                    movie = QMovie(tempGif)
+                    if not movie.isValid():
+                        log_warning(f"No se pudo cargar el GIF {tempGif}")
+                        continue
+                    original_size = movie.scaledSize()
+                    scaled_height = int(MAX_IMAGE_WIDTH * original_size.height() / original_size.width())
+                    movie.setScaledSize(QSize(MAX_IMAGE_WIDTH, scaled_height))
 
-                # Almacena el widget de la imagen
-                self.current_image_widgets.append(label)
+                    label.setMovie(movie)
+                    movie.start()  # Iniciar la animación del GIF
+
+                    # Almacenar el QLabel del GIF
+                    self.current_image_widgets.append(label)
+
+                # Verificar si es una imagen (no GIF)
+                elif valid_file[1] == IMAGE:
+                    pixmap = QPixmap(file_path)
+                    if pixmap.isNull():
+                        log_warning(f"No se pudo cargar la imagen {file_path}")
+                        continue
+
+                    # Escalar la imagen
+                    scaled_height = int(MAX_IMAGE_WIDTH * pixmap.height() / pixmap.width())
+                    scaled_pixmap = pixmap.scaled(MAX_IMAGE_WIDTH, scaled_height, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                    label.setPixmap(scaled_pixmap)
+
+                    # Almacenar el QLabel de la imagen
+                    self.current_image_widgets.append(label)
+
+                else:
+                    log_warning(f"Archivo no soportado: {file_path}")
             except Exception as e:
-                print(f"Error al cargar la imagen {file_path}: {e}")
+                log_error(f"Al cargar el archivo {file_path}: {e}")
 
-        self.show_gallery()
+            self.show_gallery()
 
     def show_gallery(self):
     # Intentar obtener el ancho del content_layout desde el widget padre

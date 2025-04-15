@@ -1,6 +1,6 @@
 {
     "gallery": {
-        "galleryPath": "F:\\Datos conservar\\álbum familiar\\2008\\2008-10-14 Gonzalo y Gabi",
+        "galleryPath": "F:\\Pruebas Collección",
         "recursive_loading": true
     },
 
@@ -12,6 +12,12 @@
 
     "dataBase": {
         "db_path": "data\\emociones.sqlite"
+    },
+
+    "logs": {
+        "log_path": "logs",
+        "log_level": "INFO",
+        "log_file": "emociones.log"
     }
 
 

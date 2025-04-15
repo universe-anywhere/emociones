@@ -7,6 +7,7 @@ from emociones.UI.gallery import Gallery
 from emociones.UI.settings import Settings
 from emociones.IA.actionHandler import ActionHandler
 from emociones.globals.globalVars import app_context
+from emociones.utils.log import log_info
 
 from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN, SCROLLBAR_WIDTH, WIDGET_ADDED_WIDTH)
 
@@ -48,7 +49,7 @@ class EmocionesApp(QMainWindow):
     def open_chatbot_dialog(self):
 
         transcribed_text = app_context.chatBoot.open_chatbot_dialog()  # Abrir el diálogo del chatbot    
-        print("Transcripción:", transcribed_text)  # Imprimir la transcripción
+        log_info("Texto transcrito: " + transcribed_text)  # Registrar el texto transcrito
         if (transcribed_text != ""):
             self.IAHandler.handle_text(transcribed_text)  # Manejar la acción con ActionHandler
 

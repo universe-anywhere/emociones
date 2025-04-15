@@ -7,16 +7,17 @@ import pyttsx3
 import numpy as np  # Asegúrate de importar numpy
 from emociones.utils.io import get_base_path
 from emociones.preferences import preferences
+from emociones.utils.log import log_info
 
 class ChatBot:
     def __init__(self):
-        print("Iniciando el ChatBot...")
+        log_info("Iniciando el ChatBot")
         # Descargar el modelo de Vosk desde: https://alphacephei.com/vosk/models
         base_path = get_base_path()
 
         # Construye la ruta completa al modelo desde base_path
         self.model_path = os.path.join(base_path, preferences["chatBoot"]["model_path"])
-        print(f"Ruta del modelo: {self.model_path}")
+        log_info(f"Ruta del modelo: {self.model_path}")
         self.model = vosk.Model(self.model_path)
 
         # Inicializar el motor de texto a voz
@@ -32,9 +33,8 @@ class ChatBot:
         )
 
     def open_chatbot_dialog(self):
-        print("Chat bot...")
         transcribed_text = self.listen_and_transcribe()
-        print(f"Texto transcrito: {transcribed_text}")
+        log_info(f"Texto transcrito: {transcribed_text}")
         return transcribed_text
 
     def speak(self, text):
@@ -51,7 +51,7 @@ class ChatBot:
         # Escucha activa
         with sd.RawInputStream(samplerate=self.samplerate, blocksize=8000, dtype="int16", channels=1) as stream:
             rec = vosk.KaldiRecognizer(self.model, self.samplerate)
-            print("Escuchando...")
+            log_info("Escuchando")
             while True:
                 data, _ = stream.read(4096)  # Captura el bloque de datos
                 # Convierte el flujo de datos a bytes
@@ -59,5 +59,5 @@ class ChatBot:
                 # Envía los datos al reconocedor
                 if rec.AcceptWaveform(data_bytes):
                     result = json.loads(rec.Result())
-                    print(f"Transcripción: {result['text']}")
+                    log_info(f"Transcripción: {result['text']}")
                     return  self.normalize_text(result['text'])

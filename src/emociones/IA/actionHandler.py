@@ -1,6 +1,7 @@
 from emociones.IA.chatbotInterpreter import ChatbotInterpreter
 from emociones.globals.globalVars import app_context
 from emociones.backend.collection import Collection
+from emociones.utils.log import log_info, log_warning
 
 class ActionHandler:
     def __init__(self):
@@ -9,7 +10,7 @@ class ActionHandler:
     def handle_text(self, text):
         # Interpretar el texto
         interpretation = self.interpreter.interpret(text)
-        print(f"Interpretación obtenida: {interpretation}")  # Para depuración
+        log_info(f"Interpretación obtenida: {interpretation}")  # Para depuración
 
         # Extraer la acción y los parámetros
         action = interpretation["action"]
@@ -84,5 +85,5 @@ class ActionHandler:
         else:
             # Caso para acciones desconocidas
             app_context.chatBoot.speak("Lo siento, no te he entendido")
-            print("Acción desconocida.")
+            log_warning("Acción desconocida: " + action)  # Para depuración
 

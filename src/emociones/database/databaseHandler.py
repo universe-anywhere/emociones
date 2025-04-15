@@ -5,18 +5,21 @@ from emociones.utils.io import get_base_path
 from emociones.utils.fileUtil import calcular_hash
 from emociones.preferences import preferences
 from emociones.constants import ATTRIBUTE_KEY_FIRMA
+from emociones.utils.log import log_info, log_error, log_warning
 
 class DatabaseHandler:
     def __init__(self, chatBot):
         self.chatBot = chatBot
         base_path = get_base_path();
+        
         self.db_name = os.path.join(base_path, preferences["dataBase"]["db_path"])
+        log_info(f"Conectando a la base de datos {self.db_name}...")
         self.connection = sqlite3.connect(self.db_name)
         self.cursor = self.connection.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON;")
+        log_info("Claves foráneas activadas.")
         self.connection.commit()
 
-        print("Claves foráneas activadas.")
 
     def getEntity(self, entityDescription):
         # Obtener la entidad de la base de datos
@@ -44,12 +47,13 @@ class DatabaseHandler:
             self.connection.commit()
             self.chatBot.speak(f"Se ha creado la entidad {entity}")
         except sqlite3.Error as e:
-            print("Error al crear la entidad:", e)
+            log_error(f"Al crear la entidad: {e}")
             self.chatBot.speak(f"No se ha podido crear la entidad {entity}")
  
     def create_attribute(self, entity, attribute):
         entityKey = self.getEntity(entity)
         if entityKey is None:
+            log_warning(f"No se ha podido encontrar la entidad {entity}")
             self.chatBot.speak(f"No se ha podido encontrar la entidad {entity}")
         else:
             try:
@@ -62,7 +66,7 @@ class DatabaseHandler:
                 self.connection.commit()
                 self.chatBot.speak(f"Se ha creado el atributo {attribute} para la entidad {entity}")
             except sqlite3.Error as e:
-                print("Error al crear el atributo:", e)
+                log_error(f"Al crear el atributo: {e}")
                 self.chatBot.speak(f"No se ha podido crear el atributo {attribute} para la entidad {entity}")
 
     def delete_entity(self, entity):
@@ -76,13 +80,14 @@ class DatabaseHandler:
             self.connection.commit()
             self.chatBot.speak(f"Se ha eliminado la entidad {entity}")
         except sqlite3.Error as e:
-            print("Error al eliminar la entidad:", e)
+            log_error(f"Al eliminar la entidad: {e}")
             self.chatBot.speak(f"No se ha podido eliminar la entidad {entity}")
 
     def delete_attribute(self, entity, attribute):
         self.chatBoot.speak(f"Eliminando atributo {attribute} de la entidad {entity}")
         entityKey = self.getEntity(entity)
         if entityKey is None:
+            log_warning(f"No se ha podido encontrar la entidad {entity}")
             self.chatBot.speak(f"No se ha podido encontrar la entidad {entity}")
         else:
             try:
@@ -94,7 +99,7 @@ class DatabaseHandler:
                 self.connection.commit()
                 self.chatBot.speak(f"Se ha eliminado el atributo {attribute} para la entidad {entity}")
             except sqlite3.Error as e:
-                print("Error al eliminar el atributo:", e)
+                log_error(f"Al eliminar el atributo: {e}")
                 self.chatBot.speak(f"No se ha podido eliminar el atributo {attribute} para la entidad {entity}")
 
     def fetch_entity_uuid(self, description):
@@ -106,7 +111,7 @@ class DatabaseHandler:
             result = self.cursor.fetchone()
             return result[0] if result else None
         except sqlite3.Error as e:
-            print(f"Error al buscar entityUUID en entity: {e}")
+            log_error(f"Al buscar entityUUID en entity: {e}")
             return None
         
     def fetch_attribute_uuid(self, description, entityDescription):
@@ -121,7 +126,7 @@ class DatabaseHandler:
             result = self.cursor.fetchone()
             return result[0] if result else None
         except sqlite3.Error as e:
-            print(f"Error al buscar attributeUUID en attribute: {e}")
+            log_error(f"Al buscar attributeUUID en attribute {description} para la entidad {entityDescription}: {e}")
             return None
 
     def fetch_entityInstance_uuid(self, description):
@@ -135,10 +140,10 @@ class DatabaseHandler:
                 result = self.cursor.fetchone()
                 return result[0] if result else None
             else:
-                print(f"No se pudo buscar la instancia para {description} porque no existe como entidad.")
+                log_error(f"No se pudo encontrar la instancia para entidad {description} porque no existe la entidad.")
                 return None
         except sqlite3.Error as e:
-            print(f"Error al buscar entityInstanceUUID en entityInstance: {e}")
+            log_error(f"al buscar entityInstanceUUID en entityInstance para la entidad {description}: {e}")
             return None
         
     def fetch_attributeInstance_uuid_valueText(self, description, valueText, entityDescription):
@@ -152,10 +157,10 @@ class DatabaseHandler:
                 result = self.cursor.fetchone()
                 return result[0] if result else None
             else:
-                print(f"No se pudo buscar la instancia para {description} porque no existe como atributo.")
+                log_error(f"No se pudo encontrar la instancia para el atributo {description} porque no existe como atributo.")
                 return None
         except sqlite3.Error as e:
-            print(f"Error al buscar attributeInstanceUUID en attributeInstance: {e}")
+            log_error(f"Al buscar attributeInstanceUUID en attributeInstance para el atributo {description}: {e}")
             return None
 
     def check_attribute_instance_value_text_exists(self, value_text):
@@ -167,7 +172,7 @@ class DatabaseHandler:
             result = self.cursor.fetchone()
             return bool(result)
         except sqlite3.Error as e:
-            print(f"Error al verificar attributeInstance: {e}")
+            log_error(f"Al verificar si existe {value_text} en attributeInstance: {e}")
             return False
 
     def insert_entityInstance(self, entityDescription):
@@ -180,13 +185,13 @@ class DatabaseHandler:
                                     VALUES ( ?, ? )
                 ''', (entityInstanceUUID, entityUUID))
                 self.connection.commit()
-                print(f"Instancia creada para {entityDescription}.")
+                log_info(f"Instancia creada para {entityDescription}.")
                 return entityInstanceUUID
             else:
-                print(f"No se pudo crear la instancia para {entityDescription} porque no existe como entidad.")
+                log_warning(f"No se pudo crear la instancia para {entityDescription} porque no existe como entidad.")
                 return None
         except sqlite3.Error as e:
-            print(f"Error al insertar en entityInstance: {e}")
+            log_error(f"Al insertar en entityInstance la entidad {entityDescription}: {e}")
             return None
 
     def insert_attribute_instance_valueText(self, entityDescription, attributeInstanceDescription, value_text):
@@ -194,16 +199,16 @@ class DatabaseHandler:
         try:
             attributeInstanceUUID = self.fetch_attributeInstance_uuid_valueText(attributeInstanceDescription, value_text, entityDescription)    
             if (not attributeInstanceUUID is None):
-                print(f"Ya existe una instancia para {attributeInstanceDescription} para {value_text}")
+                log_info(f"Ya existe una instancia para {attributeInstanceDescription} para {value_text}")
                 self.connection.rollback()
                 return None
             else:
-                print(f"No existe una instancia para {attributeInstanceDescription}. Se procede a crearla.")
+                log_info(f"No existe una instancia para {attributeInstanceDescription} para {value_text}. Se procede a crearla.")
                 entityInstanceUUID = self.insert_entityInstance(entityDescription)
                 if (not entityInstanceUUID is None):
                     attributeUUID = self.fetch_attribute_uuid(attributeInstanceDescription,entityDescription)
                     if (attributeUUID is None):
-                        print(f"Error no existe el atribute {attributeInstanceDescription} para la entidad {entityDescription}.")
+                        log_warning(f"No se pudo encontrar el atributo {attributeInstanceDescription} para la entidad {entityDescription}.")
                         self.connection.rollback()
                         return None
                     else:
@@ -213,13 +218,13 @@ class DatabaseHandler:
                                             VALUES ( ?, ?, ?, ?)
                         ''', (attributeInstanceUUID,value_text, attributeUUID, entityInstanceUUID))
                         self.connection.commit()
-                        print(f"Instancia creada para {value_text}.")
+                        log_info(f"Instancia creada para {value_text}.")
                 else:
                     self.connection.rollback()
-                    print(f"No se pudo crear la instancia para {value_text} por problemas con la entidad {entityDescription}.")    
+                    log_error(f"No se pudo crear la instancia para {value_text} por problemas con la entidad {entityDescription}.")
         except sqlite3.Error as e:
             self.connection.rollback()
-            print(f"Error al insertar en attributeInstance: {e}")
+            log_error(f"Al insertar en attributeInstance: {e}")
 
     def get_attribute_instance_entityInstanceUUID_from_valueText(self, value_text):
         try:
@@ -230,8 +235,7 @@ class DatabaseHandler:
             result = self.cursor.fetchone()
             return result[0] if result else None
         except sqlite3.Error as e:
-            print(f"Error al buscar attribute_instance_UUIDs en attributeInstance: {e}")
-            return None
+            log_error(f"Al buscar attribute_instance_UUIDs en attributeInstance para {value_text}: {e}")
         
     def insert_file_hash(self, file_path, entityDescription):
         try:
@@ -240,23 +244,23 @@ class DatabaseHandler:
                 attributeInstanceUUID = str(uuid.uuid4())
                 attributeUUID = self.fetch_attribute_uuid(ATTRIBUTE_KEY_FIRMA, entityDescription)
                 if attributeUUID is None:
-                    print(f"Error: No se pudo encontrar el atributo {ATTRIBUTE_KEY_FIRMA} para la entidad {entityDescription}.")
+                    log_warning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_FIRMA} para la entidad {entityDescription}.")
                     return
                 entityInstanceUUID = self.get_attribute_instance_entityInstanceUUID_from_valueText(file_path)
                 
                 if entityInstanceUUID is None:
-                    print(f"Error: No se pudo crear la instancia de entidad para {entityDescription}.")
+                    log_warning(f"No se pudo crear la instancia de entidad para {entityDescription}.")
                     return
                 self.cursor.execute('''
                 INSERT INTO attributeInstance (attributeInstanceUUID, valueText, attributeUUID, entityInstanceUUID)
                 VALUES (?, ?, ?, ?)
                 ''', (attributeInstanceUUID, file_hash, attributeUUID, entityInstanceUUID))
                 self.connection.commit()
-                print(f"Hash del archivo {file_path} insertado correctamente.")
+                log_info(f"Hash del archivo {file_path} insertado correctamente.")
             else:
-                print(f"No se pudo calcular el hash para el archivo {file_path}.")
+                log_warning(f"No se pudo calcular el hash para el archivo {file_path}.")
         except sqlite3.Error as e:
-            print(f"Error al insertar el hash del archivo: {e}")
+            log_error(f"Al insertar atributo {ATTRIBUTE_KEY_FIRMA} del archivo {file_path} para la entidad {entityDescription}: {e}")
 
     def close(self):
         self.connection.close()
