@@ -4,12 +4,13 @@ from emociones.backend.collection import Collection
 from emociones.utils.log import log_info, log_warning
 
 class ActionHandler:
-    def __init__(self):
+    def __init__(self, terms_to_actions):
         self.interpreter = ChatbotInterpreter()
+        self.terms_to_actions = terms_to_actions
 
     def handle_text(self, text):
         # Interpretar el texto
-        interpretation = self.interpreter.interpret(text)
+        interpretation = self.interpreter.interpret(text, self.terms_to_actions)
         log_info(f"Interpretación obtenida: {interpretation}")  # Para depuración
 
         # Extraer la acción y los parámetros
@@ -84,6 +85,6 @@ class ActionHandler:
             collection.refreshCollection()
         else:
             # Caso para acciones desconocidas
-            app_context.chatBoot.speak("Lo siento, no te he entendido")
-            log_warning("Acción desconocida: " + action)  # Para depuración
+            app_context.chatBoot.speak("Lo siento, te he entendido mal o no puedo realizar esa acción")
+            log_warning(f"Acción desconocida{action}")  # Para depuración
 

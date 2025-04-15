@@ -18,6 +18,9 @@
         "log_path": "logs",
         "log_level": "INFO",
         "log_file": "emociones.log"
+    },
+    "config":{
+        "developmentMode": true
     }
 
 

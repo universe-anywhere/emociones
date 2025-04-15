@@ -5,40 +5,8 @@ class ChatbotInterpreter:
     def __init__(self, model='es_core_news_sm'):  # Modelo para español
         self.nlp = spacy.load(model)
         
-        self.terms_to_actions = {
-            "create_attribute": {
-                "terms": ["crear", "atributo", "entidad", "en", "para"],
-                "parameters": {
-                    "attribute": "atributo",  # Palabra clave que precede el valor
-                    "entity": "entidad"      # Palabra clave que precede el valor
-                }
-            },
-            "create_entity": {
-                "terms": ["crear", "entidad"],
-                "parameters": {
-                    "entity": "entidad"
-                }
-            },
-            "delete_attribute": {
-                "terms": ["eliminar", "atributo", "entidad"],
-                "parameters": {
-                    "attribute": "atributo",
-                    "entity": "entidad"
-                }
-            },
-            "delete_entity": {
-                "terms": ["eliminar", "entidad"],
-                "parameters": {
-                    "entity": "entidad"
-                }
-            },
-            "update_collection": {
-                "terms": ["actualizar", "coileccion"],
-                "parameters": {}
-            }
-        }
 
-    def interpret(self, text):
+    def interpret(self, text, action_terms):
         
         # Procesar el texto con spaCy
         doc = self.nlp(text.lower())
@@ -50,7 +18,7 @@ class ChatbotInterpreter:
         max_matches = 0
         min_terms = float('inf')  # Inicializar con un valor muy alto para comparar la cantidad de términos
 
-        for action, config in self.terms_to_actions.items():
+        for action, config in action_terms.items():
             terms = config["terms"]
             # Contar los términos que coinciden en el texto
             matches = sum(1 for term in terms if term in tokenized_text)
