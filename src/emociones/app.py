@@ -18,10 +18,10 @@ class EmocionesApp(QMainWindow):
     def __init__(self):
         super().__init__()
         app_context.chatBoot.speak("Bienvenido, le ruego un margen de 3 segundos cada vez que interactúe conmigo")  
-        self.developmentActionHandler = DevelopmentActionHandler()
         self.userActionHandler = UserActionHandler()
         self.buttons = {}
         if (preferences["config"]["developmentMode"]):
+            self.developmentActionHandler = DevelopmentActionHandler()
             self.buttons["ChatBot Desarrolladores"] = lambda: self.open_chatbot_dialog(self.developmentActionHandler)
 
         self.buttons.update({
