@@ -7,6 +7,9 @@ from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN,SCROLLBAR_WIDTH, I
 from emociones.preferences import preferences
 from emociones.utils.fileUtil import getFileDescription, isValidFile, generateGifFromMovie
 from emociones.utils.log import logInfo, logError, logWarning
+from emociones.backend.collection import Collection
+from emociones.globals.globalVars import app_context
+
 
 class Gallery:
     def __init__(self, content_layout):
@@ -16,29 +19,23 @@ class Gallery:
         self.current_image_widgets = []
 
     def openFolderDialog(self):
+        collection = Collection()
         # Abre un diálogo para seleccionar una carpeta
         folder_path = QFileDialog.getExistingDirectory(None, "Seleccionar carpeta de imágenes", preferences["gallery"]["galleryPath"])
         if folder_path:
             # Limpia el contenido actual
             self.clearContent()
 
-            # Verifica si debe cargar imágenes de forma recursiva
-            recursive_loading = preferences["gallery"]["recursive_loading"]
-
-            # Obtiene las rutas de las imágenes según el modo de carga
-            if recursive_loading:
-                logInfo("Cargando archivos recursivamente")
-                file_paths = self.getFilePathsRecursively(folder_path)
-            else:
-                logInfo("Cargando archivos de la carpeta seleccionada")
-                file_paths = self.getFilePaths(folder_path)
+            collectedCollection = collection.getCollectionFromFolder(folder_path)
+            app_context.chatBoot.speak("Preparando galería")
 
             # Procesa las imágenes si se encontraron
-            if file_paths:
+            if collectedCollection:
                 self.createGallery()
-                self.addFilesToGallery(file_paths)
+                self.addFilesToGallery(collectedCollection)
             else:
                 logWarning("No se encontraron imágenes en la carpeta seleccionada.")
+            app_context.chatBoot.speak("Disfrute de la galería")
 
     def clearContent(self):
         # Limpia los widgets actuales en el área de contenido
@@ -67,27 +64,9 @@ class Gallery:
                 continue
 
         return result
-
-    def getFilePathsRecursively(self, folder_path):
-        # Obtener extensiones soportadas desde las preferencias
-        result = []
-
-        for root, _, files in os.walk(folder_path):
-            for file in files:
-                # Obtener la ruta completa del archivo
-                file_path = os.path.join(root, file)
-
-                valid_file = isValidFile(file_path)
-                if valid_file and valid_file[0]:
-                    # Agregar el archivo a la lista de resultados
-                    result.append(file_path)
-                else:
-                    logWarning(f"El archivo {file_path} no es una imagen o un video válido.")
-                    continue
-
-            return result
     
     def createGallery(self):
+        app_context.chatBoot.speak("Abriendo galería")
         # Crea el área de desplazamiento para la galería
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
@@ -99,8 +78,10 @@ class Gallery:
 
         self.scroll_area.setWidget(gallery_widget)
         self.content_layout.addWidget(self.scroll_area)
+        app_context.chatBoot.speak("Galería abierta")
 
     def addFilesToGallery(self, file_paths):
+        app_context.chatBoot.speak("Añadiendo imágenes a la galería")
         # Agrega las imágenes o GIFs seleccionados a la galería
         for file_path in file_paths:
             try:
@@ -151,11 +132,10 @@ class Gallery:
                     logWarning(f"Archivo no soportado: {file_path}")
             except Exception as e:
                 logError(f"Al cargar el archivo {file_path}: {e}")
-
             self.showGallery()
 
     def showGallery(self):
-    # Intentar obtener el ancho del content_layout desde el widget padre
+        # Intentar obtener el ancho del content_layout desde el widget padre
         parent_widget = self.content_layout.parentWidget()
         layout_width = parent_widget.geometry().width() if parent_widget else self.content_layout.geometry().width()
 

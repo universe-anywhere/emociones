@@ -4,7 +4,7 @@ import uuid
 from emociones.utils.io import getBasePath
 from emociones.utils.fileUtil import calculateHash
 from emociones.preferences import preferences
-from emociones.constants import ATTRIBUTE_KEY_FIRMA
+from emociones.constants import ATTRIBUTE_KEY_FIRMA, ATTRIBUTE_KEY_FIRMA, ATTRIBUTE_KEY_JPG
 from emociones.utils.log import logInfo, logError, logWarning
 
 class DatabaseHandler:
@@ -115,6 +115,7 @@ class DatabaseHandler:
             return None
         
     def fetchAttributeUUID(self, description, entityDescription):
+        logInfo(f"fetchAttributeUUID attribute description:  {description} de la entidad {entityDescription}.")
         try:
             self.cursor.execute('''
                 SELECT attribute.attributeUUID
@@ -124,6 +125,7 @@ class DatabaseHandler:
                 ''', (description, entityDescription))
 
             result = self.cursor.fetchone()
+            logInfo(f"fetchAttributeUUID result: {result}")
             return result[0] if result else None
         except sqlite3.Error as e:
             logError(f"Al buscar attributeUUID en attribute {description} para la entidad {entityDescription}: {e}")
@@ -161,6 +163,24 @@ class DatabaseHandler:
                 return None
         except sqlite3.Error as e:
             logError(f"Al buscar attributeInstanceUUID en attributeInstance para el atributo {description}: {e}")
+            return None
+
+    def fetchAttributeInstanceUUIDValueBlob(self, entityDescription, blobHash):
+        try:
+            logInfo(f"Buscando la instancia para el atributo {ATTRIBUTE_KEY_FIRMA} de la entidad {entityDescription} con hash {blobHash}.")
+            attributeUUID= self.fetchAttributeUUID(ATTRIBUTE_KEY_FIRMA, entityDescription)
+            if (not attributeUUID is None):
+                self.cursor.execute('''
+                SELECT attributeInstanceUUID FROM attributeInstance
+                WHERE attributeUUID = ? AND valueText = ?
+                ''', (attributeUUID,blobHash))
+                result = self.cursor.fetchone()
+                return result[0] if result else None
+            else:
+                logError(f"No se pudo encontrar la instancia para el atributo {ATTRIBUTE_KEY_FIRMA} porque no existe como atributo.")
+                return None
+        except sqlite3.Error as e:
+            logError(f"Al buscar attributeInstanceUUID en attributeInstance para el atributo {ATTRIBUTE_KEY_FIRMA}: {e}")
             return None
 
     def checkAttributeInstanceValueTextExists(self, value_text):
@@ -219,12 +239,66 @@ class DatabaseHandler:
                         ''', (attributeInstanceUUID,value_text, attributeUUID, entityInstanceUUID))
                         self.connection.commit()
                         logInfo(f"Instancia creada para {value_text}.")
+                        return entityInstanceUUID, attributeInstanceUUID
                 else:
                     self.connection.rollback()
                     logError(f"No se pudo crear la instancia para {value_text} por problemas con la entidad {entityDescription}.")
         except sqlite3.Error as e:
             self.connection.rollback()
             logError(f"Al insertar en attributeInstance: {e}")
+
+    def insertAttributeInstanceValueBlob(self, entityDescription, blobValue, blobHash):
+        logInfo(f"Insertando blob con hash {blobHash} para la entidad {entityDescription} y blobValue Size {len(blobValue)} bytes.")
+        self.connection.execute('BEGIN TRANSACTION')
+        try:
+            logInfo(f"Llamando a fetchAttributeInstanceUUIDValueBlob para entidad {entityDescription} y hash {blobHash}.")
+            attributeInstanceUUID = self.fetchAttributeInstanceUUIDValueBlob(entityDescription, blobHash)    
+            if (not attributeInstanceUUID is None):
+                logInfo(f"Ya existe una instancia para {ATTRIBUTE_KEY_FIRMA} con hash {blobHash}")
+                self.connection.rollback()
+                return None
+            else:
+                logInfo(f"No existe una instancia para {ATTRIBUTE_KEY_FIRMA} con hash {blobHash}. Se procede a crearla.")
+                entityInstanceUUID = self.insertEntityInstance(entityDescription)
+                logInfo(f"Creada entidad {entityDescription} con entityInstanceUUID: {entityInstanceUUID}")
+                if (not entityInstanceUUID is None):
+                    attributeUUID = self.fetchAttributeUUID(ATTRIBUTE_KEY_FIRMA,entityDescription)
+                    if (attributeUUID is None):
+                        logWarning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_FIRMA} para la entidad {entityDescription}.")
+                        self.connection.rollback()
+                        return None
+                    else:
+                        logInfo(f"Encontrado el atributo {ATTRIBUTE_KEY_FIRMA} para la entidad {entityDescription} con attributeUUID: {attributeUUID}.")
+                        attributeInstanceUUID = str(uuid.uuid4())
+                        logInfo(f"Creando instancia para {blobHash} con el atributo {ATTRIBUTE_KEY_FIRMA} con entityInstanceUUID {entityInstanceUUID} y attributeInstanceUUID {attributeInstanceUUID}.")
+                        # creamos el atributo con el hash del blob
+                        self.cursor.execute('''
+                        INSERT INTO attributeInstance ( attributeInstanceUUID, valueText, attributeUUID, entityInstanceUUID) 
+                                            VALUES ( ?, ?, ?, ?)
+                        ''', (attributeInstanceUUID,blobHash, attributeUUID, entityInstanceUUID))
+
+                        attributeInstanceUUID = str(uuid.uuid4())
+                        attributeUUID = self.fetchAttributeUUID(ATTRIBUTE_KEY_JPG,entityDescription)
+                        if (attributeUUID is None):
+                            logWarning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_JPG} para la entidad {entityDescription}.")
+                            self.connection.rollback()
+                            return None
+                        else:
+                            logInfo(f"Creando instancia para blob con el atributo {ATTRIBUTE_KEY_JPG} y attributeInstanceUUID {attributeInstanceUUID}.")
+                            # creamos el atributo con el contenido del blob
+                            self.cursor.execute('''
+                            INSERT INTO attributeInstance ( attributeInstanceUUID, valueBlob, attributeUUID, entityInstanceUUID) 
+                                                VALUES ( ?, ?, ?, ?)
+                            ''', (attributeInstanceUUID,blobValue, attributeUUID, entityInstanceUUID))
+                        self.connection.commit()
+                        logInfo(f"Instancia creada para {blobHash}.")
+                else:
+                    self.connection.rollback()
+                    logError(f"No se pudo crear la instancia para {blobHash} por problemas con la entidad {entityDescription}.")
+        except sqlite3.Error as e:
+            self.connection.rollback()
+            logError(f"Al insertar en attributeInstance: {e}")
+
 
     def getAttributeInstanceEntityInstanceUUIDFromValueText(self, value_text):
         try:
@@ -262,6 +336,40 @@ class DatabaseHandler:
         except sqlite3.Error as e:
             logError(f"Al insertar atributo {ATTRIBUTE_KEY_FIRMA} del archivo {file_path} para la entidad {entityDescription}: {e}")
 
+    def getRelationshipUUID(self, relationshipDescription):
+        logInfo(f"Buscando relationshipUUID de la relación {relationshipDescription} en la base de datos.")
+        # Obtener la relación de la base de datos
+        self.cursor.execute('''
+        SELECT relationshipUUID FROM relationship WHERE description = ?
+        ''', (relationshipDescription,))
+
+        result = self.cursor.fetchone()
+        if result:
+            relationshipUUID = result[0]
+            return relationshipUUID
+        else:
+            return None
+        
+    def insertRelationship(self, relationShipDescription, entityInstanceUUID1, entityInstanceUUID2):
+        relationshipUUID = self.getRelationshipUUID(relationShipDescription)
+        if relationshipUUID is None:
+            logWarning(f"No se pudo encontrar la relación {relationShipDescription} en la base de datos.")
+            return None
+        
+        try:
+            logInfo(f"Insertando relación {relationShipDescription} con relationshipUUID {relationshipUUID}, entityInstanceUUID1 {entityInstanceUUID1} y entityInstanceUUID2 {entityInstanceUUID2}.")
+            # Generar un UUID único para la relación
+            relationshipInstanceUUID = str(uuid.uuid4())
+            # Insertar la relación en la tabla relationshipInstance
+            self.cursor.execute('''
+                    INSERT INTO entitiesRelationShipInstance (entitiesRelationshipInstanceUUID, relationshipUUID, 
+                                entityInstanceUUID1, entityInstanceUUID2)  values (?, ?, ?, ?)
+            ''', (relationshipInstanceUUID, relationshipUUID, entityInstanceUUID1, entityInstanceUUID2))
+            # Guardar los cambios y cerrar la conexión
+            self.connection.commit()
+            logInfo(f"Relación {relationShipDescription} insertada correctamente con relationshipInstanceUUID {relationshipInstanceUUID}.")
+        except sqlite3.Error as e:
+            logError(f"Al insertar en relationship {relationShipDescription} con relationshipUUID {relationshipUUID}, entityInstanceUUID1 {entityInstanceUUID1} y entityInstanceUUID2 {entityInstanceUUID2} -> {e}")
     def close(self):
         self.connection.close()
 

@@ -31,5 +31,9 @@ user_terms_to_actions = {
     "update_collection": {
         "terms": ["actualizar", "coleccion"],
         "parameters": {}
+    },
+    "face_recognition": {
+        "terms": ["identificar", "caras", "rostros"],
+        "parameters": {}
     }
 }

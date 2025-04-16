@@ -1,6 +1,6 @@
 from emociones.globals.globalVars import app_context
-from emociones.IA.chatbotInterpreter import ChatbotInterpreter
-from emociones.IA.interpreterTermsConfig import development_terms_to_actions
+from emociones.backend.NLP.chatbotInterpreter import ChatbotInterpreter
+from emociones.backend.NLP.interpreterTermsConfig import development_terms_to_actions
 from emociones.backend.collection import Collection
 from emociones.utils.log import logInfo, logWarning
 
