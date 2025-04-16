@@ -116,17 +116,22 @@ def generateGifFromMovie(video_path):
     finally:
         video.release()
 
-def isValidFile(file_path):
-    # Verificar si es un archivo (y no una carpeta)
-    if not os.path.isfile(file_path):
-        return None
-
-    # Verifica si el archivo es una imagen o un video
+def fileType(file_path):
+   # Verifica si el archivo es una imagen o un video
     file_type, _ = mimetypes.guess_type(file_path)
 
     logInfo(f"Tipo de archivo: {file_type} - Archivo: {file_path}")
     if file_type and file_type.startswith(IMAGE):
-        return True, IMAGE
+        return  IMAGE
     elif file_type and file_type.startswith(VIDEO):
-        return True, VIDEO
+        return  VIDEO
     return None
+
+def isValidFile(file_path):
+    # Verificar si es un archivo (y no una carpeta)
+    if not os.path.isfile(file_path):
+        return False
+    return True
+    
+
+ 

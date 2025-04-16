@@ -4,7 +4,7 @@ from emociones.preferences import preferences
 from emociones.globals.globalVars import app_context
 from emociones.constants import ENTITY_KEY_MULTIMEDIA, IMAGE, VIDEO
 from emociones.utils.log import logInfo, logError, logWarning
-from emociones.utils.fileUtil import isValidFile
+from emociones.utils.fileUtil import isValidFile, fileType
 from emociones.backend.database.databaseHandler import DatabaseHandler
 
 class Collection:
@@ -50,16 +50,25 @@ class Collection:
                             continue
 
                         # Determinar el tipo MIME
-                        if validFile[1] == IMAGE:
-                            description = ENTITY_KEY_MULTIMEDIA
-                        elif validFile[1] == VIDEO: 
-                            description = ENTITY_KEY_MULTIMEDIA
+                        file_type = fileType(file_path)
+                        self.description = None
+                        if file_type == IMAGE:
+                            self.description = ENTITY_KEY_MULTIMEDIA
+                        elif file_type == VIDEO: 
+                            self.description = ENTITY_KEY_MULTIMEDIA
 
-                        if description is None:
+                        if self.description is None:
                             logWarning(f"Formato no soportado para {file_path}.")
                             continue
 
-                        dbHandler.aggregateFileToDatabasecollection(description,file_path)
+                        dbHandler.connection.execute("BEGIN TRANSACTION")
+                        try:
+                            dbHandler.aggregateFileToDatabasecollection(self.description,file_path)
+                            dbHandler.connection.commit()
+                            logInfo(f"Archivo {file_path} agregado a la base de datos.")
+                        except Exception as e:
+                            dbHandler.connection.roollback()
+                            logError(f"Error al agregar {file_path} a la base de datos: {e}")   
                     logInfo(f"Directorio procesado: {root}")
 
                 app_context.chatBoot.speak("Se ha actualizado la colección.")
@@ -92,8 +101,8 @@ class Collection:
                     if (not validFile):
                         logWarning(f"Archivo no válido: {file_path}")
                         continue
-                    collection.append(file_path)                        
-                    logInfo(f"Procesando siguiente archivo")
+                    collection.append(file_path)   
+                    logInfo(f"Añadido archivo a la colección: {file_path}")                     
                 logInfo(f"Directorio procesado: {root}")
                 if (recursive_loading == False):
                     # Limpiar la lista de subcarpetas para evitar que os.walk entre en ellas

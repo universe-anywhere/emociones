@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPixmap, QMovie
 from PyQt5.QtCore import Qt, QSize
 from emociones.constants import (MAX_IMAGE_WIDTH, SIDE_MARGIN,SCROLLBAR_WIDTH, IMAGE, VIDEO)
 from emociones.preferences import preferences
-from emociones.utils.fileUtil import getFileDescription, isValidFile, generateGifFromMovie
+from emociones.utils.fileUtil import getFileDescription, isValidFile, generateGifFromMovie, fileType
 from emociones.utils.log import logInfo, logError, logWarning
 from emociones.backend.collection import Collection
 from emociones.globals.globalVars import app_context
@@ -58,7 +58,7 @@ class Gallery:
             # Obtener la ruta completa del archivo
             file_path = os.path.join(folder_path, file)
             valid_file = isValidFile(file_path)
-            if valid_file and valid_file[0]:
+            if valid_file:
                 # Agregar el archivo a la lista de resultados
                 result.append(file_path)
             else:
@@ -86,9 +86,8 @@ class Gallery:
         for file_path in file_paths:
             try:
                 # Determinar el tipo MIME del archivo
-                file_type, _ = mimetypes.guess_type(file_path)
-                valid_file = isValidFile(file_path)
-                if (valid_file is None):
+                file_type = fileType(file_path)
+                if (file_type != IMAGE and file_type != VIDEO):
                     logWarning(f"El archivo {file_path} no es una imagen o un video válido.")
                     continue
                 # Crear un QLabel para el GIF
@@ -96,7 +95,7 @@ class Gallery:
                 label.setToolTip(getFileDescription(file_path))
                 
                 # Verificar si es un GIF animado
-                if valid_file[1] == VIDEO:
+                if file_type == VIDEO:
                     tempGif = generateGifFromMovie(file_path)
                     # Cargar el GIF en un QMovie y asignarlo al QLabel
                     movie = QMovie(tempGif)
@@ -114,7 +113,7 @@ class Gallery:
                     self.current_image_widgets.append(label)
 
                 # Verificar si es una imagen (no GIF)
-                elif valid_file[1] == IMAGE:
+                elif file_type == IMAGE:
                     pixmap = QPixmap(file_path)
                     if pixmap.isNull():
                         logWarning(f"No se pudo cargar la imagen {file_path}")

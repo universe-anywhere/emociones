@@ -7,8 +7,9 @@ import threading
 import uuid
 from emociones.globals.globalVars import app_context
 from emociones.backend.database.databaseHandler import DatabaseHandler
-from emociones.utils.fileUtil import isValidFile
-from emociones.utils.log import logInfo, logWarning
+from emociones.backend.database.databaseExceptions import AttributeInstanceNotFoundException, EntityInstanceFromAtributeInstanceNotFoundException    
+from emociones.utils.fileUtil import isValidFile, fileType
+from emociones.utils.log import logInfo, logWarning, logError
 from emociones.constants import VIDEO, IMAGE, ENTITY_KEY_FACE, ENTITY_KEY_MULTIMEDIA, RELATIONSHIP_KEY_APPEARS
 
 
@@ -60,62 +61,59 @@ class FaceProcessor:
             # Comprobar si el rostro ya está almacenado
             matchingIndex = next((index for index, knownFace in enumerate(self.knownFaces)
                                   if np.linalg.norm(encoding - knownFace) < threshold), None)
+            try:
+                if matchingIndex is None:  # Es un rostro único
+                    logInfo("Rostro único detectado.")
+                    self.knownFaces.append(encoding)
 
-            if matchingIndex is None:  # Es un rostro único
-                logInfo("Rostro único detectado.")
-                self.knownFaces.append(encoding)
+                    # Extraer rostro y convertirlo a blob
+                    face = frame[top:bottom, left:right]
+                    _, buffer = cv2.imencode(".jpg", face)
+                    blob = buffer.tobytes()
 
-                # Extraer rostro y convertirlo a blob
-                face = frame[top:bottom, left:right]
-                _, buffer = cv2.imencode(".jpg", face)
-                blob = buffer.tobytes()
-
-                # Generar un ID único para el blob
-                uniqueId = self.generateUniqueId(blob)
-                # Agregar al diccionario faceData
-                self.faceData[uniqueId] = {
-                    "files": [filePath]
-                }
+                    # Generar un ID único para el blob
+                    uniqueId = self.generateUniqueId(blob)
+                    # Agregar al diccionario faceData
+                    self.faceData[uniqueId] = {
+                        "files": [filePath]
+                    }
 
 
-                logInfo(f"Rostro único detectado con ID: {uniqueId} y tamaño de blob: {len(blob)} bytes")
-                # Crear el blob y la firma (usamos la conexión de base de datos del hilo)
-                faceEntityUUIDInfo = dbHandlerInstance.insertAttributeInstanceValueBlob(ENTITY_KEY_FACE, blob, uniqueId)
-                if faceEntityUUIDInfo is None:
-                    logInfo(f"El rostro con firma {uniqueId} ya existe en el sistema")
-                else: 
-                    logInfo(f"Se ha creado el rostro con firma {uniqueId}")
-                    
-            else:  # El rostro ya está registrado, actualizar archivos
-                logInfo("El rostro ya se encuentra entre los detectados.")
-                uniqueId = list(self.faceData.keys())[matchingIndex]
-                if filePath not in self.faceData[uniqueId]["files"]:
-                    self.faceData[uniqueId]["files"].append(filePath)
+                    logInfo(f"Rostro único detectado con ID: {uniqueId} y tamaño de blob: {len(blob)} bytes")
+                    # Crear el blob y la firma (usamos la conexión de base de datos del hilo)
+                    try:
+                        dbHandlerInstance.fetchAttributeInstanceUUIDValueBlob(ENTITY_KEY_FACE, uniqueId)    
+                        logInfo(f"El rostro con firma {uniqueId} ya existe en el sistema")
+                    except AttributeInstanceNotFoundException as e:
+                        dbHandlerInstance.insertAttributeInstanceValueBlob(ENTITY_KEY_FACE, blob, uniqueId)
+                        logInfo(f"Se ha creado el rostro con firma {uniqueId}")
+                        
+                else:  # El rostro ya está registrado, actualizar archivos
+                    logInfo("El rostro ya se encuentra entre los detectados.")
+                    uniqueId = list(self.faceData.keys())[matchingIndex]
+                    if filePath not in self.faceData[uniqueId]["files"]:
+                        self.faceData[uniqueId]["files"].append(filePath)
 
-            #retrieve the face entity UUID from the database
-            faceEntityUUID = dbHandlerInstance.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(uniqueId)
-            if faceEntityUUID is None:
-                logWarning(f"No se pudo recuperar el UUID de la entidad del rostro con firma {uniqueId} por lo que no se inserta la relación entre el rostro y la imagen donde aparece")
-                continue
-            
-            logInfo(f"UUID del rostro recuperado: {faceEntityUUID}")
-            #retrieve the multimedia entity UUID from the database
-            fotoVideoEntityInstanceUUID = dbHandlerInstance.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(filePath)
-            if fotoVideoEntityInstanceUUID is None:
-                logWarning(f"No existe entidad {IMAGE}/{VIDEO} para {filePath}, añadiendola a la colección de base de datos")
-                multimediaFileInstanceInfo = dbHandlerInstance.aggregateFileToDatabasecollection(multimediaFileEntityDescription,filePath)                    
-                if multimediaFileInstanceInfo is None:
-                    logWarning(f"No se pudo agregar {filePath} a la colección de base de datos")
-                    continue
-                logInfo(f"UUID de {IMAGE}/{VIDEO} recuperado: {multimediaFileInstanceInfo[0]}")
-                fotoVideoEntityInstanceUUID = multimediaFileInstanceInfo[0]
-            #insert the relationship between the face and the multimedia entity
-            dbHandlerInstance.insertRelationship(RELATIONSHIP_KEY_APPEARS, faceEntityUUID, fotoVideoEntityInstanceUUID)
-            logInfo(f"Se ha creado la relación entre el rostro y {IMAGE}/{VIDEO} con UUIDs {faceEntityUUID} y {fotoVideoEntityInstanceUUID}")
-            logInfo(f"Rostro procesado")
+                #retrieve the face entity UUID from the database)
+                faceEntityUUID = dbHandlerInstance.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(uniqueId)                
+                logInfo(f"UUID del rostro recuperado: {faceEntityUUID}")
+                try:
+                    #retrieve the multimedia entity UUID from the database
+                    fotoVideoEntityInstanceUUID = dbHandlerInstance.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(filePath)
+                except EntityInstanceFromAtributeInstanceNotFoundException as e:
+                    logInfo(f"ERROR CAPTURADO -> No existe entidad {ENTITY_KEY_MULTIMEDIA} para {filePath}, añadiendola a la colección de base de datos")
+                    multimediaFileInstanceInfo = dbHandlerInstance.aggregateFileToDatabasecollection(multimediaFileEntityDescription,filePath)                    
+                    logInfo(f"UUID de {ENTITY_KEY_MULTIMEDIA} recuperado: {multimediaFileInstanceInfo[0]}")
+                    fotoVideoEntityInstanceUUID = multimediaFileInstanceInfo[0]
 
-        #set the multimedia entity with the face detection done attribute
-        dbHandlerInstance.setFaceDetectionHasBeenDone(filePath)
+                #insert the relationship between the face and the multimedia entity
+                dbHandlerInstance.insertRelationship(RELATIONSHIP_KEY_APPEARS, faceEntityUUID, fotoVideoEntityInstanceUUID)
+                dbHandlerInstance.connection.commit()  # Confirmar la transacción
+                logInfo(f"Se ha creado la relación entre el rostro y {ENTITY_KEY_MULTIMEDIA} con UUIDs {faceEntityUUID} y {fotoVideoEntityInstanceUUID}")
+                logInfo(f"Rostro procesado")
+            except Exception as e:
+                logError(f"Error al procesar el rostro: {e}")
+                raise
         logInfo(f"Fin deteccion de rotros {uuidDeteccion} - Rostros Detectados: {detectedFaces}")
 
     def evaluateImageQuality(self, image):
@@ -174,10 +172,10 @@ class FaceProcessor:
                     if self.stop_event.is_set():  # Detener el hilo si el evento está activado
                         logInfo("Solicitud manual de detención del proceso.")
                         return
-
+                        
                     logInfo(f"Procesando: {filePath}")
                     validFile = isValidFile(filePath)
-                    if validFile is None:
+                    if not validFile:
                         logWarning(f"Archivo inválido: {filePath}")
                         continue
 
@@ -185,32 +183,52 @@ class FaceProcessor:
                     if self.dbHandler.faceDetectionHasBeenDone(filePath):
                         logInfo(f"El archivo {filePath} ya ha sido procesado con anterioridad. Se omite la detección de rostros.")
                         continue
-
-                    if validFile[1] == VIDEO:
-                        cap = cv2.VideoCapture(filePath)
-                        logInfo(f"Abriendo video: {filePath}")
-                        while cap.isOpened():
-                            ret, frame = cap.read()
-                            if not ret or frame is None:
-                                logWarning(f"Frame vacío o no válido en el video: {filePath}. Finalizando procesamiento del video.")
-                                break  # Sal del bucle si no se puede leer el frame
-                            threshold = self.evaluateImageQuality(frame)
-                            self.detectFaces(frame, threshold, filePath,ENTITY_KEY_MULTIMEDIA, self.dbHandler)
-                        cap.release()
-                        logInfo(f"Video cerrado: {filePath}")
-                    elif validFile[1] == IMAGE:
-                        file = r"{}".format(filePath)
-                        image = cv2.imread(file)
-                        logInfo(f"Abriendo imagen: {file}")
-                        if image is None or image.size == 0:
-                            logWarning(f"No se ha cargado {file}. Asegúrate de que existe.")
+                            
+                    try:
+                        self.dbHandler.connection.execute("BEGIN TRANSACTION")  # Iniciar transacción
+                        transactionUUID = str(uuid.uuid4())
+                        logInfo(f"Iniciada transacción -> {transactionUUID}")
+                        file_type = fileType(filePath)
+                        if file_type == VIDEO:
+                            cap = cv2.VideoCapture(filePath)
+                            logInfo(f"Abriendo video: {filePath}")
+                            while cap.isOpened():
+                                ret, frame = cap.read()
+                                if not ret or frame is None:
+                                    logWarning(f"Frame vacío o no válido en el video: {filePath}. Finalizando procesamiento del video.")
+                                    break  # Sal del bucle si no se puede leer el frame
+                                threshold = self.evaluateImageQuality(frame)
+                                self.detectFaces(frame, threshold, filePath,ENTITY_KEY_MULTIMEDIA, self.dbHandler)
+                            cap.release()
+                            logInfo(f"Video cerrado: {filePath}")
+                        elif file_type == IMAGE:
+                            file = r"{}".format(filePath)
+                            image = cv2.imread(file)
+                            logInfo(f"Abriendo imagen: {file}")
+                            if image is None or image.size == 0:
+                                logWarning(f"No se ha cargado {file}. Asegúrate de que existe.")
+                                continue
+                            threshold = self.evaluateImageQuality(image)
+                            self.detectFaces(image, threshold, filePath,ENTITY_KEY_MULTIMEDIA,self.dbHandler)
+                            logInfo(f"Imagen cerrada: {file}")
+                        else:
+                            logWarning(f"Formato no soportado para {filePath}.")
                             continue
-                        threshold = self.evaluateImageQuality(image)
-                        self.detectFaces(image, threshold, filePath,ENTITY_KEY_MULTIMEDIA,self.dbHandler)
-                        logInfo(f"Imagen cerrada: {file}")
-                    else:
-                        logWarning(f"Formato no soportado para {filePath}.")
+                        logInfo(f"Estableciendo marca de detección de rostros ejecutada para {filePath} en la base de datos.")    
+                        #set the multimedia entity with the face detection done attribute
+                        self.dbHandler.setFaceDetectionHasBeenDone(filePath)
+                        self.dbHandler.connection.commit()  # Confirmar la transacción
+                        logInfo(f"Finalizada transacción -> {transactionUUID}")
+                    except Exception as e:
+                        self.dbHandler.connection.rollback()  # Revertir la transacción en caso de error
+                        logError(f"Error al procesar {filePath}, rollback done: {e}")
+                        logInfo(f"Finalizada transacción -> {transactionUUID}")
                         continue
+                    finally:
+                        if self.dbHandler.connection.in_transaction:
+                            self.dbHandler.connection.rollback()  # Revertir la transacción si está activa
+                            logWarning(f"Transacción revertida para {filePath} al estar abierta al final del proceso")
+                            logInfo(f"Finalizada transacción -> {transactionUUID}")
 
                 app_context.chatBoot.speak("Finalizada la detección de rostros.")
                 logInfo("Terminado procesamiento de archivos")
