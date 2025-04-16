@@ -24,6 +24,7 @@ class ChatBot:
         self.engine = pyttsx3.init()
         self.engine.setProperty("rate", preferences["chatBoot"]["rate"])  # Ajusta la velocidad del habla
         self.samplerate = preferences["chatBoot"]["samplerate"]
+        logInfo("ChatBot iniciado")
 
     def normalizeText(self, text):
         # Eliminar tildes y normalizar el texto

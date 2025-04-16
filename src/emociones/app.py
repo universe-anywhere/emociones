@@ -11,6 +11,7 @@ from emociones.backend.NLP.userActionHandler import UserActionHandler
 from emociones.backend.NLP.developmentActionHandler import DevelopmentActionHandler
 from emociones.backend.NLP.interpreterTermsConfig import development_terms_to_actions, user_terms_to_actions
 from emociones.backend.FaceRecognition.faceProcessor import FaceProcessor
+from emociones.backend.collection import Collection
 from emociones.utils.log import logInfo
 from emociones.preferences import preferences
 
@@ -22,8 +23,9 @@ class EmocionesApp(QMainWindow):
         
         # Instancia de FaceProcessor
         self.face_processor = FaceProcessor()
+        self.collection = Collection()
         # Instancia de UserActionHandler
-        self.user_action_handler = UserActionHandler(self.face_processor)
+        self.user_action_handler = UserActionHandler(self.face_processor,self.collection)
         
         self.buttons = {}
         if (preferences["config"]["developmentMode"]):
@@ -90,10 +92,20 @@ class EmocionesApp(QMainWindow):
         """
         Sobrescribe el evento de cierre de la ventana para detener los hilos en ejecución.
         """
+        logInfo("Deteniendo hilos antes de cerrar la aplicación.")
+        #app_context.chatBoot.speak("Deteniendo procesos en ejcucion, te avisare cuando haya terminado")  
+        
         if self.face_processor.isRunning:
-            logInfo("Deteniendo hilos antes de cerrar la aplicación.")
+            logInfo("Deteniendo el hilo de face_processor")
             self.face_processor.stopDetection()  # Detener el hilo de detección
+        
+        if self.collection.isRunning:
+            logInfo("Deteniendo el hilo de collection")
+            self.collection.stopDetection()  # Detener el hilo de detección
+        
+        #app_context.chatBoot.speak("Procesos detennidos, cerrando aplicación")  
         logInfo("Cerrando la aplicación.")
+        
         event.accept()  # Permitir el cierre de la ventana
 
 def main():

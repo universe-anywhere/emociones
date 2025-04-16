@@ -4,15 +4,13 @@ from emociones.backend.NLP.interpreterTermsConfig import user_terms_to_actions
 from emociones.backend.collection import Collection
 from emociones.utils.log import logInfo, logWarning
 from emociones.preferences import preferences
-from emociones.backend.collection import Collection
-from emociones.backend.FaceRecognition.faceProcessor import FaceProcessor
 
 class UserActionHandler:
-    def __init__(self, face_processor):
+    def __init__(self, face_processor, collection):
         self.interpreter = ChatbotInterpreter()
         self.terms_to_actions = user_terms_to_actions
         self.face_processor = face_processor  # Instancia compartida de FaceProcessor
-
+        self.collection = collection  # Instancia de Collection para actualizar la colección
     def handleText(self, text):
         # Interpretar el texto
         interpretation = self.interpreter.interpret(text, self.terms_to_actions)
@@ -22,8 +20,7 @@ class UserActionHandler:
         action = interpretation["action"]
 
         if action == "update_collection":
-            collection = Collection()
-            collection.refreshCollection()
+            self.collection.refreshCollection()
         elif action == "face_recognition":
             # Usar la instancia compartida de FaceProcessor
             self.face_processor.processFiles(Collection().getCollectionFromFolder(preferences["gallery"]["galleryPath"]))

@@ -13,10 +13,12 @@ from emociones.globals.globalVars import app_context
 
 class Gallery:
     def __init__(self, content_layout):
+        logInfo("Iniciando Gallery")
         self.content_layout = content_layout
         self.scroll_area = None
         self.gallery_layout = None
         self.current_image_widgets = []
+        logInfo("Gallery iniciada")
 
     def openFolderDialog(self):
         collection = Collection()
@@ -78,10 +80,8 @@ class Gallery:
 
         self.scroll_area.setWidget(gallery_widget)
         self.content_layout.addWidget(self.scroll_area)
-        app_context.chatBoot.speak("Galería abierta")
 
     def addFilesToGallery(self, file_paths):
-        app_context.chatBoot.speak("Añadiendo imágenes a la galería")
         # Agrega las imágenes o GIFs seleccionados a la galería
         for file_path in file_paths:
             try:

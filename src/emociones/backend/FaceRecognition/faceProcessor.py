@@ -16,11 +16,13 @@ class FaceProcessor:
         """
         Inicializa la clase FaceProcessor.
         """
+        logInfo("Iniciando FaceProcessor")
         self.knownFaces = []  # Lista para almacenar los embeddings de rostros únicos detectados
         self.faceData = {}  # Diccionario para almacenar IDs únicos y la relación de archivos
         self.processingThread = None  # Hilo para detección de rostros
         self.isRunning = False  # Bandera para evitar múltiples ejecuciones simultáneas
         self.stop_event = threading.Event()  # Evento para detener el hilo
+        logInfo("FaceProcessor inicializado")
 
     def __generateUniqueId(self, data):
         """
@@ -133,6 +135,7 @@ class FaceProcessor:
 
             try:
                 for filePath in filePaths:
+                    # solo permitimos detener el evento si esta al comienzo de un nuevo fichero (filePath)
                     if self.stop_event.is_set():  # Detener el hilo si el evento está activado
                         logInfo("Solicitud manual de detención del proceso.")
                         return
@@ -148,8 +151,6 @@ class FaceProcessor:
                         logInfo(f"Abriendo video: {filePath}")
                         while cap.isOpened():
                             ret, frame = cap.read()
-                            if not ret or self.stop_event.is_set():  # Detener si el evento está activado
-                                break
                             threshold = self.__evaluateImageQuality(frame)
                             self.__detectFaces(frame, threshold, filePath)
                         cap.release()

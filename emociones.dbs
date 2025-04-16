@@ -69,14 +69,8 @@
 			<index name="pk_entitiesRelationshipInstance" unique="PRIMARY_KEY" >
 				<column name="entitiesRelationshipInstanceUUID" />
 			</index>
-			<index name="sqlite_autoindex_entitiesRelationshipInstance_2" unique="UNIQUE" >
+			<index name="Idx_realtionEntityInstanceUUID1" unique="NORMAL" >
 				<column name="relationshipUUID" />
-				<column name="entityInstanceUUID1" />
-				<column name="entityInstanceUUID2" />
-			</index>
-			<index name="sqlite_autoindex_entitiesRelationshipInstance_3" unique="UNIQUE" >
-				<column name="relationshipUUID" />
-				<column name="entityInstanceUUID2" />
 				<column name="entityInstanceUUID1" />
 			</index>
 			<fk name="Fk_entitiesRelationshipInstance" to_schema="Default" to_table="relationship" delete_action="cascade" >
@@ -131,11 +125,11 @@
 	<connector name="emociones" database="Sqlite" driver_class="org.sqlite.JDBC" driver_jar="sqlite-jdbc-3.27.2.1.jar" driver_desc="Standard" host="localhost" port="7210" instance="F:/Proyectos/emociones/src/emociones/data/emociones.sqlite" />
 	<layout name="Default Layout" id="Layout_1c7d7fe" show_relation="columns" >
 		<entity schema="Default" name="entity" color="008000" x="48" y="48" />
-		<entity schema="Default" name="entityInstance" color="C1D8EE" x="544" y="256" />
 		<entity schema="Default" name="attributeInstance" color="3986C1" x="528" y="64" />
 		<entity schema="Default" name="attribute" color="008000" x="256" y="48" />
 		<entity schema="Default" name="relationship" color="C1D8EE" x="848" y="64" />
-		<entity schema="Default" name="entitiesRelationshipInstance" color="C1D8EE" x="832" y="208" />
+		<entity schema="Default" name="entityInstance" color="C1D8EE" x="544" y="256" />
+		<entity schema="Default" name="entitiesRelationshipInstance" color="C1D8EE" x="800" y="224" />
 		<script name="SQL_Editor" id="Editor_1b3cd3a" language="SQL" >
 			<string><![CDATA[CREATE TABLE entity ( 
 	entityUUID           text NOT NULL  PRIMARY KEY  ,
@@ -197,7 +191,8 @@ from
 	left join entityInstance ei on (ei.entityUUID = e.entityUUID)
 	left join attributeInstance ai on (ai.attributeUUID = a.attributeUUID) and (ai.entityInstanceUUID = ei.entityInstanceUUID)
 where
-   e.description = "imagen"
+1=1
+   --e.description = "imagen"
 );
 
 select count(1)
@@ -286,18 +281,19 @@ CREATE INDEX idx_entityUUID ON attribute ( entityUUID );]]></string>
 ]]></string>
 		</script>
 		<script name="entitiesRelationshipInstance" id="Editor_4562329" language="SQL" >
-			<string><![CDATA[CREATE TABLE entitiesRelationshipInstance ( 
-	entitiesRelationshipUUID text NOT NULL  PRIMARY KEY  ,
-	entityInstanceUUID1  text NOT NULL    ,
-	entityInstanceUUID2  text NOT NULL    ,
-	relationshipUUID     text NOT NULL    ,
-	CONSTRAINT sqlite_autoindex_entitiesRelationshipInstance_2 UNIQUE ( relationshipUUID, entityInstanceUUID1, entityInstanceUUID2 ) ,
-	CONSTRAINT sqlite_autoindex_entitiesRelationshipInstance_3 UNIQUE ( relationshipUUID, entityInstanceUUID2, entityInstanceUUID1 ) ,
-	FOREIGN KEY ( relationshipUUID ) REFERENCES relationship( relationshipUUID ) ON DELETE CASCADE 
- );
+			<string><![CDATA[update entity set entityUUID = "35330f50-112f-4658-8cd1-f8ab02214f81", description="archivo multimedia" where description="imagen";
+drop table entitiesRelationshipInstance;
+PRAGMA table_info(entityInstance);
+PRAGMA foreign_key_check;
 ]]></string>
 		</script>
 		<script name="entitiesRelationshipInstance_001" id="Editor_4cda4da" language="SQL" >
+			<string><![CDATA[delete from relationship;
+insert into relationship values ("9945ab9f-d5c8-46d2-8534-35617de50b68","puede ser");
+select * from relationship;
+drop table entitiesRelationshipInstance;]]></string>
+		</script>
+		<script name="entitiesRelationshipInstance_002" id="Editor_22848e5" language="SQL" >
 			<string><![CDATA[CREATE TABLE entitiesRelationshipInstance ( 
 	entitiesRelationshipInstanceUUID text NOT NULL  PRIMARY KEY  ,
 	entityInstanceUUID1  text NOT NULL    ,
@@ -305,8 +301,50 @@ CREATE INDEX idx_entityUUID ON attribute ( entityUUID );]]></string>
 	relationshipUUID     text NOT NULL    ,
 	CONSTRAINT sqlite_autoindex_entitiesRelationshipInstance_2 UNIQUE ( relationshipUUID, entityInstanceUUID1, entityInstanceUUID2 ) ,
 	CONSTRAINT sqlite_autoindex_entitiesRelationshipInstance_3 UNIQUE ( relationshipUUID, entityInstanceUUID2, entityInstanceUUID1 ) ,
+	FOREIGN KEY ( relationshipUUID ) REFERENCES relationship( relationshipUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( entityInstanceUUID1 ) REFERENCES entityInstance( entityInstanceUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( entityInstanceUUID2 ) REFERENCES entityInstance( entityInstanceUUID ) ON DELETE CASCADE 
+ );
+]]></string>
+		</script>
+		<script name="entitiesRelationshipInstance_004" id="Editor_3dea4f6" language="SQL" >
+			<string><![CDATA[CREATE TABLE entitiesRelationshipInstance ( 
+	entitiesRelationshipInstanceUUID text NOT NULL  PRIMARY KEY  ,
+	entityInstanceUUID1  text NOT NULL    ,
+	entityInstanceUUID2  text NOT NULL    ,
+	relationshipUUID     text NOT NULL    ,
+	CONSTRAINT idx_entitiesRelationshipInstance_1to2 UNIQUE ( relationshipUUID, entityInstanceUUID1, entityInstanceUUID2 ) ,
+	CONSTRAINT idx_entitiesRelationshipInstance_2To1 UNIQUE ( relationshipUUID, entityInstanceUUID2, entityInstanceUUID1 ) ,
+	FOREIGN KEY ( relationshipUUID ) REFERENCES relationship( relationshipUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( entityInstanceUUID2, entityInstanceUUID1 ) REFERENCES entityInstance( entityInstanceUUID, entityInstanceUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( entityInstanceUUID1, entityInstanceUUID2 ) REFERENCES entityInstance( entityInstanceUUID, entityUUID ) ON DELETE CASCADE 
+ );
+]]></string>
+		</script>
+		<script name="entitiesRelationshipInstance_005" id="Editor_354309c" language="SQL" >
+			<string><![CDATA[CREATE TABLE entitiesRelationshipInstance ( 
+	entitiesRelationshipInstanceUUID text NOT NULL  PRIMARY KEY  ,
+	entityInstanceUUID1  text NOT NULL    ,
+	entityInstanceUUID2  text NOT NULL    ,
+	relationshipUUID     text NOT NULL    ,
+	CONSTRAINT sqlite_autoindex_entitiesRelationshipInstance_2 UNIQUE ( relationshipUUID, entityInstanceUUID1, entityInstanceUUID2 ) ,
+	CONSTRAINT sqlite_autoindex_entitiesRelationshipInstance_3 UNIQUE ( relationshipUUID, entityInstanceUUID2, entityInstanceUUID1 ) ,
+	FOREIGN KEY ( relationshipUUID ) REFERENCES relationship( relationshipUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( entityInstanceUUID1 ) REFERENCES entityInstance( entityInstanceUUID ) ON DELETE CASCADE ,
+	FOREIGN KEY ( entityInstanceUUID2 ) REFERENCES entityInstance( entityInstanceUUID )  
+ );
+]]></string>
+		</script>
+		<script name="entitiesRelationshipInstance_006" id="Editor_1d9b8cd" language="SQL" >
+			<string><![CDATA[CREATE TABLE entitiesRelationshipInstance ( 
+	entitiesRelationshipInstanceUUID text NOT NULL  PRIMARY KEY  ,
+	entityInstanceUUID1  text NOT NULL    ,
+	entityInstanceUUID2  text NOT NULL    ,
+	relationshipUUID     text NOT NULL    ,
 	FOREIGN KEY ( relationshipUUID ) REFERENCES relationship( relationshipUUID ) ON DELETE CASCADE 
  );
+
+CREATE INDEX Idx_realtionEntityInstanceUUID1 ON entitiesRelationshipInstance ( relationshipUUID, entityInstanceUUID1 );
 ]]></string>
 		</script>
 		<script name="entity" id="Editor_1688d93" language="SQL" >

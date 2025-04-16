@@ -9,6 +9,7 @@ from emociones.utils.log import logInfo, logError, logWarning
 
 class DatabaseHandler:
     def __init__(self, chatBot):
+        logInfo("Iniciando DatabaseHandler")
         self.chatBot = chatBot
         base_path = getBasePath();
         
@@ -19,6 +20,7 @@ class DatabaseHandler:
         self.cursor.execute("PRAGMA foreign_keys = ON;")
         logInfo("Claves foráneas activadas.")
         self.connection.commit()
+        logInfo("DatabaseHandler iniciado")
 
 
     def getEntity(self, entityDescription):
