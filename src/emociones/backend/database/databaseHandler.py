@@ -4,7 +4,7 @@ import uuid
 from emociones.utils.io import getBasePath
 from emociones.utils.fileUtil import calculateHash
 from emociones.preferences import preferences
-from emociones.constants import ATTRIBUTE_KEY_FIRMA, ATTRIBUTE_KEY_FIRMA, ATTRIBUTE_KEY_JPG
+from emociones.constants import ENTITY_KEY_MULTIMEDIA, ATTRIBUTE_KEY_SIGNATURE, ATTRIBUTE_KEY_SIGNATURE, ATTRIBUTE_KEY_JPG, ATTRIBUTE_KEY_PATH, RELATIONSHIP_KEY_CAN_BE, ATTRIBUTE_KEY_FACEDECTION_DONE
 from emociones.utils.log import logInfo, logError, logWarning
 
 class DatabaseHandler:
@@ -14,7 +14,7 @@ class DatabaseHandler:
         base_path = getBasePath();
         
         self.db_name = os.path.join(base_path, preferences["dataBase"]["db_path"])
-        logInfo(f"Conectando a la base de datos {self.db_name}...")
+        logInfo(f"Conectando a la base de datos {self.db_name}")
         self.connection = sqlite3.connect(self.db_name)
         self.cursor = self.connection.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON;")
@@ -23,8 +23,23 @@ class DatabaseHandler:
         logInfo("DatabaseHandler iniciado")
 
 
+    def getAttribute(self, attributeDescription):
+        # Obtener el atributo de la base de datos
+        logInfo(f"Buscando attributeUUID de la entidad {attributeDescription} en la base de datos.")
+        self.cursor.execute('''
+        SELECT attributeUUID FROM attribute WHERE description = ?
+        ''', (attributeDescription,))
+
+        result = self.cursor.fetchone()
+        if result:
+            attributeUUID = result[0]
+            return attributeUUID
+        else:
+            return None
+        
     def getEntity(self, entityDescription):
         # Obtener la entidad de la base de datos
+        logInfo(f"Buscando entityUUID de la entidad {entityDescription} en la base de datos.")
         self.cursor.execute('''
         SELECT entityUUID FROM entity WHERE description = ?
         ''', (entityDescription,))
@@ -169,8 +184,8 @@ class DatabaseHandler:
 
     def fetchAttributeInstanceUUIDValueBlob(self, entityDescription, blobHash):
         try:
-            logInfo(f"Buscando la instancia para el atributo {ATTRIBUTE_KEY_FIRMA} de la entidad {entityDescription} con hash {blobHash}.")
-            attributeUUID= self.fetchAttributeUUID(ATTRIBUTE_KEY_FIRMA, entityDescription)
+            logInfo(f"Buscando la instancia para el atributo {ATTRIBUTE_KEY_SIGNATURE} de la entidad {entityDescription} con hash {blobHash}.")
+            attributeUUID= self.fetchAttributeUUID(ATTRIBUTE_KEY_SIGNATURE, entityDescription)
             if (not attributeUUID is None):
                 self.cursor.execute('''
                 SELECT attributeInstanceUUID FROM attributeInstance
@@ -179,10 +194,10 @@ class DatabaseHandler:
                 result = self.cursor.fetchone()
                 return result[0] if result else None
             else:
-                logError(f"No se pudo encontrar la instancia para el atributo {ATTRIBUTE_KEY_FIRMA} porque no existe como atributo.")
+                logError(f"No se pudo encontrar la instancia para el atributo {ATTRIBUTE_KEY_SIGNATURE} porque no existe como atributo.")
                 return None
         except sqlite3.Error as e:
-            logError(f"Al buscar attributeInstanceUUID en attributeInstance para el atributo {ATTRIBUTE_KEY_FIRMA}: {e}")
+            logError(f"Al buscar attributeInstanceUUID en attributeInstance para el atributo {ATTRIBUTE_KEY_SIGNATURE}: {e}")
             return None
 
     def checkAttributeInstanceValueTextExists(self, value_text):
@@ -256,28 +271,28 @@ class DatabaseHandler:
             logInfo(f"Llamando a fetchAttributeInstanceUUIDValueBlob para entidad {entityDescription} y hash {blobHash}.")
             attributeInstanceUUID = self.fetchAttributeInstanceUUIDValueBlob(entityDescription, blobHash)    
             if (not attributeInstanceUUID is None):
-                logInfo(f"Ya existe una instancia para {ATTRIBUTE_KEY_FIRMA} con hash {blobHash}")
+                logInfo(f"Ya existe una instancia para {ATTRIBUTE_KEY_SIGNATURE} con hash {blobHash}")
                 self.connection.rollback()
                 return None
             else:
-                logInfo(f"No existe una instancia para {ATTRIBUTE_KEY_FIRMA} con hash {blobHash}. Se procede a crearla.")
+                logInfo(f"No existe una instancia para {ATTRIBUTE_KEY_SIGNATURE} con hash {blobHash}. Se procede a crearla.")
                 entityInstanceUUID = self.insertEntityInstance(entityDescription)
                 logInfo(f"Creada entidad {entityDescription} con entityInstanceUUID: {entityInstanceUUID}")
                 if (not entityInstanceUUID is None):
-                    attributeUUID = self.fetchAttributeUUID(ATTRIBUTE_KEY_FIRMA,entityDescription)
-                    if (attributeUUID is None):
-                        logWarning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_FIRMA} para la entidad {entityDescription}.")
+                    attributeUUIDSignature = self.fetchAttributeUUID(ATTRIBUTE_KEY_SIGNATURE,entityDescription)
+                    if (attributeUUIDSignature is None):
+                        logWarning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_SIGNATURE} para la entidad {entityDescription}.")
                         self.connection.rollback()
                         return None
                     else:
-                        logInfo(f"Encontrado el atributo {ATTRIBUTE_KEY_FIRMA} para la entidad {entityDescription} con attributeUUID: {attributeUUID}.")
+                        logInfo(f"Encontrado el atributo {ATTRIBUTE_KEY_SIGNATURE} para la entidad {entityDescription} con attributeUUID: {attributeUUIDSignature}.")
                         attributeInstanceUUID = str(uuid.uuid4())
-                        logInfo(f"Creando instancia para {blobHash} con el atributo {ATTRIBUTE_KEY_FIRMA} con entityInstanceUUID {entityInstanceUUID} y attributeInstanceUUID {attributeInstanceUUID}.")
+                        logInfo(f"Creando instancia para {blobHash} con el atributo {ATTRIBUTE_KEY_SIGNATURE} con entityInstanceUUID {entityInstanceUUID} y attributeInstanceUUID {attributeInstanceUUID}.")
                         # creamos el atributo con el hash del blob
                         self.cursor.execute('''
                         INSERT INTO attributeInstance ( attributeInstanceUUID, valueText, attributeUUID, entityInstanceUUID) 
                                             VALUES ( ?, ?, ?, ?)
-                        ''', (attributeInstanceUUID,blobHash, attributeUUID, entityInstanceUUID))
+                        ''', (attributeInstanceUUID,blobHash, attributeUUIDSignature, entityInstanceUUID))
 
                         attributeInstanceUUID = str(uuid.uuid4())
                         attributeUUID = self.fetchAttributeUUID(ATTRIBUTE_KEY_JPG,entityDescription)
@@ -285,15 +300,17 @@ class DatabaseHandler:
                             logWarning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_JPG} para la entidad {entityDescription}.")
                             self.connection.rollback()
                             return None
-                        else:
-                            logInfo(f"Creando instancia para blob con el atributo {ATTRIBUTE_KEY_JPG} y attributeInstanceUUID {attributeInstanceUUID}.")
-                            # creamos el atributo con el contenido del blob
-                            self.cursor.execute('''
+
+                        logInfo(f"Creando instancia para blob con el atributo {ATTRIBUTE_KEY_JPG} y attributeInstanceUUID {attributeInstanceUUID}.")
+                        # creamos el atributo con el contenido del blob
+                        self.cursor.execute('''
                             INSERT INTO attributeInstance ( attributeInstanceUUID, valueBlob, attributeUUID, entityInstanceUUID) 
-                                                VALUES ( ?, ?, ?, ?)
+                                            VALUES ( ?, ?, ?, ?)
                             ''', (attributeInstanceUUID,blobValue, attributeUUID, entityInstanceUUID))
                         self.connection.commit()
+                        
                         logInfo(f"Instancia creada para {blobHash}.")
+                        return entityInstanceUUID, attributeUUIDSignature 
                 else:
                     self.connection.rollback()
                     logError(f"No se pudo crear la instancia para {blobHash} por problemas con la entidad {entityDescription}.")
@@ -301,8 +318,49 @@ class DatabaseHandler:
             self.connection.rollback()
             logError(f"Al insertar en attributeInstance: {e}")
 
+    def setFaceDetectionHasBeenDone(self, file_path):
+        logInfo(f"Marcando que se ha hecho la detección de caras para {file_path}.")
+        try:
+            multimediaFileEntityInstanceUUID = self.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(file_path)
+            if multimediaFileEntityInstanceUUID is None:
+                logWarning(f"No se pudo encontrar la instancia de entidad para {file_path}.")
+                return False
+                
+            attributeUUID = self.getAttribute(ATTRIBUTE_KEY_FACEDECTION_DONE)
+            if attributeUUID is None:
+                logWarning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_FACEDECTION_DONE} por lo que no se marca a True")
+                return False
 
-    def getAttributeInstanceEntityInstanceUUIDFromValueText(self, value_text):
+            attributeInstanceUUID = str(uuid.uuid4())
+            self.cursor.execute('''
+                INSERT INTO attributeInstance (attributeInstanceUUID, valueBool, attributeUUID, entityInstanceUUID) VALUES (?, ?, ?, ?)
+                ''', (attributeInstanceUUID, True, attributeUUID, multimediaFileEntityInstanceUUID))
+            self.connection.commit()
+            logInfo(f"Marcado que se ha hecho la detección de caras para {file_path}.")
+        except sqlite3.Error as e:
+            logError(f"Al marcar que se ha hecho la detección de caras para {file_path}: {e}")
+            return False
+        
+    def faceDetectionHasBeenDone(self, file_path):
+        logInfo(f"Buscando si se ha hecho la detección de caras para {file_path}.")
+        try:
+            multimediaFileEntityInstanceUUID = self.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(file_path)
+            if multimediaFileEntityInstanceUUID is None:
+                return False
+            self.cursor.execute('''
+                SELECT valueBool FROM attributeInstance ai
+                                join attribute a on a.attributeUUID = ai.attributeUUID
+                WHERE ai.entityInstanceUUID = ? and a.description = ?
+                ''', (multimediaFileEntityInstanceUUID,ATTRIBUTE_KEY_FACEDECTION_DONE))
+            result = self.cursor.fetchone()
+            if result:
+                return result[0]
+            else:
+                return False
+        except sqlite3.Error as e:
+            logError(f"Al buscar si se ha hecho la detección de caras para {file_path}: {e}")
+            return False
+    def getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(self, value_text):
         try:
             self.cursor.execute('''
             SELECT entityInstanceUUID FROM attributeInstance
@@ -318,11 +376,11 @@ class DatabaseHandler:
             file_hash = calculateHash(file_path)
             if file_hash:
                 attributeInstanceUUID = str(uuid.uuid4())
-                attributeUUID = self.fetchAttributeUUID(ATTRIBUTE_KEY_FIRMA, entityDescription)
+                attributeUUID = self.fetchAttributeUUID(ATTRIBUTE_KEY_SIGNATURE, entityDescription)
                 if attributeUUID is None:
-                    logWarning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_FIRMA} para la entidad {entityDescription}.")
+                    logWarning(f"No se pudo encontrar el atributo {ATTRIBUTE_KEY_SIGNATURE} para la entidad {entityDescription}.")
                     return
-                entityInstanceUUID = self.getAttributeInstanceEntityInstanceUUIDFromValueText(file_path)
+                entityInstanceUUID = self.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(file_path)
                 
                 if entityInstanceUUID is None:
                     logWarning(f"No se pudo crear la instancia de entidad para {entityDescription}.")
@@ -336,7 +394,7 @@ class DatabaseHandler:
             else:
                 logWarning(f"No se pudo calcular el hash para el archivo {file_path}.")
         except sqlite3.Error as e:
-            logError(f"Al insertar atributo {ATTRIBUTE_KEY_FIRMA} del archivo {file_path} para la entidad {entityDescription}: {e}")
+            logError(f"Al insertar atributo {ATTRIBUTE_KEY_SIGNATURE} del archivo {file_path} para la entidad {entityDescription}: {e}")
 
     def getRelationshipUUID(self, relationshipDescription):
         logInfo(f"Buscando relationshipUUID de la relación {relationshipDescription} en la base de datos.")
@@ -352,12 +410,26 @@ class DatabaseHandler:
         else:
             return None
         
+    def existRelationship(self, relationshipUUID ,entityInstanceUUID1, entityInstanceUUID2):
+        
+        self.cursor.execute('''
+        SELECT * FROM entitiesRelationShipInstance WHERE relationshipUUID = ? AND entityInstanceUUID1 = ? AND entityInstanceUUID2 = ?
+        ''', (relationshipUUID, entityInstanceUUID1, entityInstanceUUID2))
+
+        result = self.cursor.fetchone()
+        if result:
+            return True
+        else:
+            return False
+        
     def insertRelationship(self, relationShipDescription, entityInstanceUUID1, entityInstanceUUID2):
         relationshipUUID = self.getRelationshipUUID(relationShipDescription)
         if relationshipUUID is None:
             logWarning(f"No se pudo encontrar la relación {relationShipDescription} en la base de datos.")
             return None
-        
+        if self.existRelationship(relationshipUUID ,entityInstanceUUID1, entityInstanceUUID2):
+            logInfo(f"La relación {relationShipDescription} ya existe en la base de datos, se ignora la inserción.")
+            return None
         try:
             logInfo(f"Insertando relación {relationShipDescription} con relationshipUUID {relationshipUUID}, entityInstanceUUID1 {entityInstanceUUID1} y entityInstanceUUID2 {entityInstanceUUID2}.")
             # Generar un UUID único para la relación
@@ -372,8 +444,32 @@ class DatabaseHandler:
             logInfo(f"Relación {relationShipDescription} insertada correctamente con relationshipInstanceUUID {relationshipInstanceUUID}.")
         except sqlite3.Error as e:
             logError(f"Al insertar en relationship {relationShipDescription} con relationshipUUID {relationshipUUID}, entityInstanceUUID1 {entityInstanceUUID1} y entityInstanceUUID2 {entityInstanceUUID2} -> {e}")
+    
+    def aggregateFileToDatabasecollection(self, imageVideoEntityDescription, file_path):
+        # Insertar nueva instancia
+        logInfo(f"Insertando nueva instancia para {imageVideoEntityDescription} con el atributo {ATTRIBUTE_KEY_PATH}")
+        multimediaFileInstanceInfo = self.insertAttributeInstanceValueText(imageVideoEntityDescription, ATTRIBUTE_KEY_PATH, file_path)
+        if multimediaFileInstanceInfo is None:
+            logWarning(f"No se pudo insertar la instancia para {imageVideoEntityDescription} con el atributo {ATTRIBUTE_KEY_PATH}, por lo que no se crea la relación entre archivo multimedia y foto/video")
+            return None
+
+        logInfo(f"Insertando para nueva instancia para {imageVideoEntityDescription} con el atributo {ATTRIBUTE_KEY_SIGNATURE}")
+        self.insertFileHash(file_path, imageVideoEntityDescription)
+                            
+        multimediaFileInstanceUUID = multimediaFileInstanceInfo[0]
+        multimediaFileUUID = self.getEntity(ENTITY_KEY_MULTIMEDIA) 
+        if multimediaFileUUID is None:
+            logWarning(f"No se pudo obtener el UUID de {ENTITY_KEY_MULTIMEDIA}, por lo que no se crea la relación entre archivo multimedia y foto/video")
+            return None   
+        
+        logInfo(f"Insertando relación entre {imageVideoEntityDescription} y {ENTITY_KEY_MULTIMEDIA} con valores {multimediaFileUUID} y {multimediaFileInstanceUUID}")   
+        self.insertRelationship(RELATIONSHIP_KEY_CAN_BE, multimediaFileUUID, multimediaFileInstanceUUID)
+        return multimediaFileInstanceInfo
+    
     def close(self):
+        logInfo("Cerrando la conexión a la base de datos.")
         self.connection.close()
+        logInfo("Base de datos. cerrada")
 
     def __del__(self):
         # Llamar a close() automáticamente al destruir la instancia

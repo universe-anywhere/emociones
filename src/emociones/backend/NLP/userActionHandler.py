@@ -23,7 +23,7 @@ class UserActionHandler:
             self.collection.refreshCollection()
         elif action == "face_recognition":
             # Usar la instancia compartida de FaceProcessor
-            self.face_processor.processFiles(Collection().getCollectionFromFolder(preferences["gallery"]["galleryPath"]))
+            self.face_processor.processFiles(self.collection.getCollectionFromFolder(preferences["gallery"]["galleryPath"]))
         else:
             # Caso para acciones desconocidas
             app_context.chatBoot.speak("Lo siento, te he entendido mal o no puedo realizar esa acción")
