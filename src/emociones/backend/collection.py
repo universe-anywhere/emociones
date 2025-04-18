@@ -115,7 +115,7 @@ class Collection:
         except Exception as e:
             app_context.chatBoot.speak("Ocurrió un error al obtener la colección.")
             logError("Al obtener la colección: {e}")
-            
+    
     def stopDetection(self):
         """Detiene el proceso de actualización."""
         if self.isRunning:
@@ -132,3 +132,20 @@ class Collection:
         """Espera a que el hilo de actualización termine."""
         if self.processingThread:
             self.processingThread.join()
+    
+    def initWorkingCollection(self):
+        """Inicializa la colección de trabajo."""
+        app_context.workingCollectionItems = None
+        app_context.chatBoot.speak("Se ha iniciado la colección de trabajo.")
+
+    def filterWorkingCollection(self, parameters):
+        app_context.chatBoot.speak("Filtrando la colección de trabajo...")
+        logInfo("Filtrando la colección de trabajo...")
+        # TODO: convertir parametros en filtros de SQL para traer los archivos que deban continuar en la collecion        
+        # TODO: ejecutar los filtros SQL en la base de datos y traer las rutas de los ficheros válidos
+        # TODO: si el filtro es añadir insertar los elementos nuevos a la coleccion evitando los duplicados, 
+        #       si el filtro es eliminar quitar los elementos que haya que eliminar de la coleccion 
+        # incluir el resultado en la coleccion de trabajo
+        app_context.workingCollectionItems = self.getCollectionFromFolder(preferences["gallery"]["galleryPath"])
+        app_context.chatBoot.speak("Se ha filtrado la colección de trabajo.")
+        logInfo("Se ha filtrado la colección de trabajo.")

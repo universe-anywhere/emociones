@@ -60,6 +60,7 @@ class EmocionesApp(QMainWindow):
 
         # Sección inferior: contenido dinámico
         self.content_layout = QVBoxLayout()
+        setattr(app_context, "_gallery_instance", Gallery(self.content_layout))  # Guardar la instancia como atributo dinámico
         self.main_layout.addLayout(self.content_layout)
 
     def openChatbotDialog(self, iaHandler):
@@ -70,18 +71,13 @@ class EmocionesApp(QMainWindow):
             iaHandler.handleText(transcribed_text)  # Manejar la acción con ActionHandler
 
     def manageGallery(self):
-        # Usar una variable local para instanciar Gallery
-        gallery_instance = getattr(self, "_gallery_instance", None)  # Comprobar si ya existe la instancia
-        if not gallery_instance:
-            gallery_instance = Gallery(self.content_layout)
-            setattr(self, "_gallery_instance", gallery_instance)  # Guardar la instancia como atributo dinámico
-        gallery_instance.openFolderDialog()
+        galleryInstance = getattr(app_context, "_gallery_instance", None)  # Comprobar si ya existe la instancia
+        galleryInstance.openFolderDialog()
 
     def resizeEvent(self, event):
         # Verificar si existe _gallery_instance y ajustarla al redimensionar
-        gallery_instance = getattr(self, "_gallery_instance", None)  # Obtener la instancia dinámica
-        if gallery_instance and hasattr(gallery_instance, 'gallery_layout'):
-            gallery_instance.showGallery()  # Ajustar la galería
+        gallery_instance = getattr(app_context, "_gallery_instance", None)  # Obtener la instancia dinámica
+        gallery_instance.showGallery()  # Ajustar la galería
         super().resizeEvent(event)
 
     def openSettings(self):

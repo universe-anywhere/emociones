@@ -19,68 +19,16 @@ class DevelopmentActionHandler:
         parameters = interpretation["parameters"]
 
         if action == "createEntity":
-            # Obtener los parámetros necesarios
-            entity = parameters.get("entity")
-            if entity:
-                # Preguntar confirmación al usuario
-                pregunta = f"¿Quieres crear la entidad {entity}?"
-                respuesta = app_context.chatBoot.listenAndTranscribe(pregunta)
-
-                if "si" in respuesta.lower():
-                    app_context.dbHandler.createEntity(entity)
-                else:
-                    app_context.chatBoot.speak("De acuerdo, no se creará la entidad")
-            else:
-                app_context.chatBoot.speak("No he entendido bien la información para crear la entidad")
+            app_context.dbHandler.createEntity(parameters)
 
         elif action == "createAttribute":
-            # Obtener los parámetros necesarios
-            attribute = parameters.get("attribute")
-            entity = parameters.get("entity")
-
-            if attribute and entity:
-                # Preguntar confirmación al usuario
-                pregunta = f"¿Quieres crear el atributo {attribute} para la entidad {entity}?"
-                respuesta = app_context.chatBoot.listenAndTranscribe(pregunta)
-
-                if "si" in respuesta.lower():
-                    app_context.dbHandler.createAttribute(entity, attribute)
-                else:
-                    app_context.chatBoot.speak("De acuerdo, no se creará el atributo")
-            else:
-                app_context.chatBoot.speak("No he entendido bien la información para crear el atributo")
+            app_context.dbHandler.createAttribute(parameters)
 
         elif action == "deleteEntity":
-            # Obtener los parámetros necesarios
-            entity = parameters.get("entity")
-            if entity:
-                # Preguntar confirmación al usuario
-                pregunta = f"¿Quieres eliminar la entidad {entity}?"
-                respuesta = app_context.chatBoot.listenAndTranscribe(pregunta)
-
-                if "si" in respuesta.lower():
-                    app_context.dbHandler.deleteEntity(entity)
-                else:
-                    app_context.chatBoot.speak("De acuerdo, no se eliminará la entidad")
-            else:
-                app_context.chatBoot.speak("No he entendido bien la información para eliminar la entidad")
+            app_context.dbHandler.deleteEntity(parameters)
 
         elif action == "deleteAttribute":
-            # Obtener los parámetros necesarios
-            attribute = parameters.get("attribute")
-            entity = parameters.get("entity")
-
-            if attribute and entity:
-                # Preguntar confirmación al usuario
-                pregunta = f"¿Quieres eliminar el atributo {attribute} de la entidad {entity}?"
-                respuesta = app_context.chatBoot.listenAndTranscribe(pregunta)
-
-                if "si" in respuesta.lower():
-                    app_context.dbHandler.deleteAttribute(entity, attribute)
-                else:
-                    app_context.chatBoot.speak("De acuerdo, no se eliminará el atributo")
-            else:
-                app_context.chatBoot.speak("No he entendido bien la información para eliminar el atributo")
+            app_context.dbHandler.deleteAttribute(parameters)
         else:
             # Caso para acciones desconocidas
             app_context.chatBoot.speak("Lo siento, te he entendido mal o no puedo realizar esa acción")

@@ -18,12 +18,21 @@ class UserActionHandler:
 
         # Extraer la acción y los parámetros
         action = interpretation["action"]
+        parameters = interpretation["parameters"]
 
         if action == "update_collection":
             self.collection.refreshCollection()
         elif action == "face_recognition":
             # Usar la instancia compartida de FaceProcessor
             self.face_processor.processFiles(self.collection.getCollectionFromFolder(preferences["gallery"]["galleryPath"]))
+        elif action == "show_gallery_preview":
+            # Usar la instancia compartida de FaceProcessor
+            galleryInstance = getattr(app_context, "_gallery_instance", None)  # Comprobar si ya existe la instancia
+            galleryInstance.previewGallery()
+        elif action == "init_workingCollection":
+            self.collection.initWorkingCollection()
+        elif action == "filter_workingCollection":
+            self.collection.filterWorkingCollection(parameters)
         else:
             # Caso para acciones desconocidas
             app_context.chatBoot.speak("Lo siento, te he entendido mal o no puedo realizar esa acción")

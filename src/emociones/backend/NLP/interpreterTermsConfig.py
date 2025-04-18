@@ -35,5 +35,25 @@ user_terms_to_actions = {
     "face_recognition": {
         "terms": ["identificar", "caras", "rostros"],
         "parameters": {}
+    },
+    "show_gallery_preview": {
+        "terms": ["mostrar", "resultados", "coleccion"],
+        "parameters": {}
+    },
+    "init_workingCollection": {
+        "terms": ["nueva", "busqueda"],
+        "parameters": {}
+    },
+    "filter_workingCollection": {
+        "terms": ["seleccionar", "imagenes", "fotos", "videos", "del año"],
+        "parameters": {}
+    },
+    "filter_workingCollection": {
+        "terms": ["seleccionar", "imagenes", "fotos", "videos", "del año","al año"],
+        "parameters": {}
+    },
+    "filter_workingCollection": {
+        "terms": ["seleccionar", "imagenes", "fotos", "videos", "de los años"],
+        "parameters": {}
     }
 }

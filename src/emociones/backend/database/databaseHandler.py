@@ -39,65 +39,118 @@ class DatabaseHandler:
             logError(f"No se encontró el atributo {attributeDescription} en la base de datos.")
             raise AttributeNotFoundException(f"No se encontró el atributo {attributeDescription}.")        
     
-    def createEntity(self, entity):
+    def createEntity(self, parameters):
+        # Obtener los parámetros necesarios
+        entity = parameters.get("entity")
+        if entity:
+            # Preguntar confirmación al usuario
+            pregunta = f"¿Quieres crear la entidad {entity}?"
+            respuesta = self.chatBoot.listenAndTranscribe(pregunta)
 
-        self.chatBot.speak(f"Creando entidad {entity}")
-        try:
-            self.cursor.execute('''
-            INSERT INTO entity (entityUUID, description)
-            VALUES (?, ?)
-            ''', (str(uuid.uuid4()), entity))
+            if "si" in respuesta.lower():
+                self.chatBot.speak(f"Creando entidad {entity}")
+                try:
+                    self.cursor.execute('''
+                    INSERT INTO entity (entityUUID, description)
+                    VALUES (?, ?)
+                    ''', (str(uuid.uuid4()), entity))
 
-            # Guardar los cambios y cerrar la conexión
-            self.chatBot.speak(f"Se ha creado la entidad {entity}")
-        except sqlite3.Error as e:
-            logError(f"Al crear la entidad: {e}")
-            self.chatBot.speak(f"No se ha podido crear la entidad {entity}")
-            raise
+                    # Guardar los cambios y cerrar la conexión
+                    self.chatBot.speak(f"Se ha creado la entidad {entity}")
+                except sqlite3.Error as e:
+                    logError(f"Al crear la entidad: {e}")
+                    self.chatBot.speak(f"No se ha podido crear la entidad {entity}")
+                    raise
+            else:
+                self.chatBoot.speak("De acuerdo, no se creará la entidad")
+        else:
+            self.chatBoot.speak("No he entendido bien la información para crear la entidad")
 
-    def createAttribute(self, entity, attribute):
-        entityUUID = self.fetchEntityUUID(entity)
-        try:
-            self.cursor.execute('''
-            INSERT INTO attribute (attributeUUID, description, entityUUID)
-            VALUES (?, ?, ?)
-            ''', (str(uuid.uuid4()), attribute, entityUUID))
+    def createAttribute(self, parameters):
+        # Obtener los parámetros necesarios
+        attribute = parameters.get("attribute")
+        entity = parameters.get("entity")
 
-            # Guardar los cambios y cerrar la conexión
-            self.chatBot.speak(f"Se ha creado el atributo {attribute} para la entidad {entity}")
-        except sqlite3.Error as e:
-            logError(f"Al crear el atributo: {e}")
-            self.chatBot.speak(f"No se ha podido crear el atributo {attribute} para la entidad {entity}")
-            raise
+        if attribute and entity:
+            # Preguntar confirmación al usuario
+            pregunta = f"¿Quieres crear el atributo {attribute} para la entidad {entity}?"
+            respuesta = self.chatBoot.listenAndTranscribe(pregunta)
 
-    def deleteEntity(self, entity):
-        self.chatBot.speak(f"Eliminando entidad {entity}")
-        try:
-            self.cursor.execute('''
-            DELETE FROM entity WHERE description = ?
-            ''', (entity,))
+            if "si" in respuesta.lower():
+                entityUUID = self.fetchEntityUUID(entity)
+                try:
+                    self.cursor.execute('''
+                    INSERT INTO attribute (attributeUUID, description, entityUUID)
+                    VALUES (?, ?, ?)
+                    ''', (str(uuid.uuid4()), attribute, entityUUID))
 
-            # Guardar los cambios y cerrar la conexión
-            self.chatBot.speak(f"Se ha eliminado la entidad {entity}")
-        except sqlite3.Error as e:
-            logError(f"Al eliminar la entidad: {e}")
-            self.chatBot.speak(f"No se ha podido eliminar la entidad {entity}")
-            raise
+                    # Guardar los cambios y cerrar la conexión
+                    self.chatBot.speak(f"Se ha creado el atributo {attribute} para la entidad {entity}")
+                except sqlite3.Error as e:
+                    logError(f"Al crear el atributo: {e}")
+                    self.chatBot.speak(f"No se ha podido crear el atributo {attribute} para la entidad {entity}")
+                    raise
+            else:
+                self.chatBoot.speak("De acuerdo, no se creará el atributo")
+        else:
+            self.chatBoot.speak("No he entendido bien la información para crear el atributo")
 
-    def deleteAttribute(self, entity, attribute):
-        self.chatBoot.speak(f"Eliminando atributo {attribute} de la entidad {entity}")
-        entityUUID = self.fetchEntityUUID(entity)
-        try:
-            self.cursor.execute('''
-            DELETE FROM attribute WHERE description = ? AND entityUUID = ?
-            ''', (attribute, entityUUID))
 
-            # Guardar los cambios y cerrar la conexión
-            self.chatBot.speak(f"Se ha eliminado el atributo {attribute} para la entidad {entity}")
-        except sqlite3.Error as e:
-            logError(f"Al eliminar el atributo: {e}")
-            self.chatBot.speak(f"No se ha podido eliminar el atributo {attribute} para la entidad {entity}")
-            raise
+    def deleteEntity(self, parameters):
+        # Obtener los parámetros necesarios
+        entity = parameters.get("entity")
+        if entity:
+            # Preguntar confirmación al usuario
+            pregunta = f"¿Quieres eliminar la entidad {entity}?"
+            respuesta = self.chatBoot.listenAndTranscribe(pregunta)
+
+            if "si" in respuesta.lower():
+                self.chatBot.speak(f"Eliminando entidad {entity}")
+                try:
+                    self.cursor.execute('''
+                    DELETE FROM entity WHERE description = ?
+                    ''', (entity,))
+
+                    # Guardar los cambios y cerrar la conexión
+                    self.chatBot.speak(f"Se ha eliminado la entidad {entity}")
+                except sqlite3.Error as e:
+                    logError(f"Al eliminar la entidad: {e}")
+                    self.chatBot.speak(f"No se ha podido eliminar la entidad {entity}")
+                    raise
+            else:
+                self.chatBoot.speak("De acuerdo, no se eliminará la entidad")
+        else:
+            self.chatBoot.speak("No he entendido bien la información para eliminar la entidad")
+
+
+    def deleteAttribute(self, parameters):
+
+        # Obtener los parámetros necesarios
+        attribute = parameters.get("attribute")
+        entity = parameters.get("entity")
+
+        if attribute and entity:
+            # Preguntar confirmación al usuario
+            pregunta = f"¿Quieres eliminar el atributo {attribute} de la entidad {entity}?"
+            respuesta = self.chatBoot.listenAndTranscribe(pregunta)
+
+            if "si" in respuesta.lower():
+                self.chatBoot.speak(f"Eliminando atributo {attribute} de la entidad {entity}")
+                entityUUID = self.fetchEntityUUID(entity)
+                try:
+                    self.cursor.execute('''
+                    DELETE FROM attribute WHERE description = ? AND entityUUID = ?
+                    ''', (attribute, entityUUID))
+
+                    # Guardar los cambios y cerrar la conexión
+                    self.chatBot.speak(f"Se ha eliminado el atributo {attribute} para la entidad {entity}")
+                except sqlite3.Error as e:
+                    logError(f"Al eliminar el atributo: {e}")
+                    self.chatBot.speak(f"No se ha podido eliminar el atributo {attribute} para la entidad {entity}")
+                    raise
+        else:
+            self.chatBoot.speak("No he entendido bien la información para eliminar el atributo")
+
 
     def fetchEntityUUID(self, description):
         try:

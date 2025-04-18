@@ -7,6 +7,7 @@ class AppContext:
         logInfo("Iniciando Contexto")
         self.chatBoot = ChatBot()
         self.dbHandler = DatabaseHandler(self.chatBoot)
+        self.workingCollectionItems = None
         logInfo("Contexto Iniciado")
 
 app_context = AppContext()

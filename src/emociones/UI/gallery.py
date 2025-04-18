@@ -13,12 +13,14 @@ from emociones.globals.globalVars import app_context
 
 class Gallery:
     def __init__(self, content_layout):
+        app_context.chatBoot.speak('Inicializando Galeria JMBL')
         logInfo("Iniciando Gallery")
         self.content_layout = content_layout
         self.scroll_area = None
         self.gallery_layout = None
         self.current_image_widgets = []
         logInfo("Gallery iniciada")
+        app_context.chatBoot.speak('Galeria inicializada JMBL')
 
     def openFolderDialog(self):
         collection = Collection()
@@ -38,6 +40,21 @@ class Gallery:
             else:
                 logWarning("No se encontraron imágenes en la carpeta seleccionada.")
             app_context.chatBoot.speak("Disfrute de la galería")
+
+    def previewGallery(self):
+        collectionItems = app_context.workingCollectionItems
+        if collectionItems is None:
+            app_context.chatBoot.speak("No estás trabajando con ninguna colección")
+            logError("No hay resultados para generar la galería.")
+            return
+
+        app_context.chatBoot.speak(f"Preparando vista previa de galería para la colección de {len(collectionItems)} elementos")
+        # Limpia el contenido actual
+        self.clearContent()
+
+        # Procesa las imágenes si se encontraron
+        self.createGallery()
+        self.addFilesToGallery(collectionItems)
 
     def clearContent(self):
         # Limpia los widgets actuales en el área de contenido
@@ -134,6 +151,10 @@ class Gallery:
             self.showGallery()
 
     def showGallery(self):
+
+        if self.gallery_layout is None:
+            return
+
         # Intentar obtener el ancho del content_layout desde el widget padre
         parent_widget = self.content_layout.parentWidget()
         layout_width = parent_widget.geometry().width() if parent_widget else self.content_layout.geometry().width()
@@ -169,6 +190,7 @@ class Gallery:
 
     def resizeEvent(self, event):
         # Ajusta el diseño de las imágenes existentes al redimensionar la ventana
-        if hasattr(self, 'gallery_layout'):
-            self.showGallery()
+        if self.gallery_layout is None:
+            return
+        self.showGallery()
         super().resizeEvent(event)
