@@ -192,6 +192,9 @@ class FaceProcessor:
                             cap = cv2.VideoCapture(filePath)
                             logInfo(f"Abriendo video: {filePath}")
                             while cap.isOpened():
+                                if self.stop_event.is_set():  # Detener el hilo si el evento está activado
+                                    logInfo("Solicitud manual de detención del proceso.")
+                                    return
                                 ret, frame = cap.read()
                                 if not ret or frame is None:
                                     logWarning(f"Frame vacío o no válido en el video: {filePath}. Finalizando procesamiento del video.")
@@ -215,6 +218,10 @@ class FaceProcessor:
                         else:
                             logWarning(f"Formato no soportado para {filePath}.")
                             continue
+
+                        if self.stop_event.is_set():  # Detener el hilo si el evento está activado
+                            logInfo("Solicitud manual de detención del proceso.")
+                            return
                         #Establecer el numero total de personas unicas detectadas en el archivo multimedia actual
                         totalUniquePersonsDetected = self.distinctPersonTracker.getTotalPeopleDetected()
                         self.dbHandler.setTotalNumerDistinctPersonDetectedInFile(filePath,totalUniquePersonsDetected)
