@@ -1,10 +1,7 @@
 import hashlib
 import os
-import tempfile
 import mimetypes
-import cv2
-from PIL import Image
-from emociones.constants import (IMAGE, VIDEO, GIF_MAX_FRAMES)
+from emociones.constants import (IMAGE, VIDEO)
 from emociones.utils.log import logInfo, logError, logWarning
 
 def calculateHash(filePath):
@@ -65,56 +62,6 @@ def getFileDescription(file_path):
     file_name, _ = os.path.splitext(file_name_with_extension)
 
     return file_name
-
-def generateGifFromMovie(video_path):
-    try:
-        # Abrir el vídeo con OpenCV
-        video = cv2.VideoCapture(video_path)
-
-        if not video.isOpened():
-            logWarning(f"No se pudo abrir el archivo de video {video_path}")
-            return None
-
-        frames = []
-        gif_path = os.path.join(tempfile.gettempdir(), f"{os.path.splitext(os.path.basename(video_path))[0]}.gif")
-
-        # Obtener total de fotogramas en el vídeo
-        total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-
-        # Elegir GIF_MAX_FRAMES fotogramas distribuidos uniformemente
-        step = max(1, total_frames // GIF_MAX_FRAMES)  # Distribuir los fotogramas a lo largo del vídeo
-
-        for i in range(GIF_MAX_FRAMES):  # Capturar hasta GIF_MAX_FRAMES fotogramas espaciados
-            video.set(cv2.CAP_PROP_POS_FRAMES, i * step)
-            success, frame = video.read()
-
-            if not success:
-                logWarning(f"No se pudo leer el fotograma {i} del video {video_path}")
-                break
-
-            # Convertir el fotograma de BGR (OpenCV) a RGB (Pillow)
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            # Crear una imagen PIL desde el fotograma
-            pil_image = Image.fromarray(frame_rgb)
-            frames.append(pil_image)
-
-        # Generar el GIF animado con un intervalo de 0.5 segundos entre fotogramas
-        if frames:
-            frames[0].save(
-                gif_path,
-                save_all=True,
-                append_images=frames[1:],
-                duration=500,  # 500 milisegundos = 0.5 segundos por fotograma
-                loop=0  # Número de repeticiones (0 = infinito)
-            )
-            logInfo(f"GIF generado correctamente en: {gif_path}")
-            return gif_path
-        else:
-            logWarning(f"No se pudieron obtener suficientes fotogramas para generar el GIF.")
-            return None
-    finally:
-        video.release()
 
 def fileType(file_path):
    # Verifica si el archivo es una imagen o un video
