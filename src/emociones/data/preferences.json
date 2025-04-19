@@ -21,7 +21,9 @@
     },
     "config":{
         "developmentMode": true
+    },
+    "yolov5":{
+        "model": "data\\yolov5s.pt"
     }
-
 
 }

@@ -13,10 +13,8 @@ class ChatBot:
     def __init__(self):
         logInfo("Iniciando el ChatBot")
         # Descargar el modelo de Vosk desde: https://alphacephei.com/vosk/models
-        base_path = getBasePath()
-
         # Construye la ruta completa al modelo desde base_path
-        self.model_path = os.path.join(base_path, preferences["chatBoot"]["model_path"])
+        self.model_path = os.path.join(getBasePath(), preferences["chatBoot"]["model_path"])
         logInfo(f"Ruta del modelo: {self.model_path}")
         self.model = vosk.Model(self.model_path)
 

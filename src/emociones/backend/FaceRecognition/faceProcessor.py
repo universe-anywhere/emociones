@@ -11,7 +11,7 @@ from emociones.backend.database.databaseExceptions import AttributeInstanceNotFo
 from emociones.utils.fileUtil import isValidFile, fileType
 from emociones.utils.log import logInfo, logWarning, logError
 from emociones.constants import VIDEO, IMAGE, ENTITY_KEY_FACE, ENTITY_KEY_MULTIMEDIA, RELATIONSHIP_KEY_APPEARS
-
+from emociones.backend.PeopleRecognition.uniquePersonTracker import UniquePersonTracker
 
 class FaceProcessor:
     def __init__(self):
@@ -99,22 +99,21 @@ class FaceProcessor:
                 logInfo(f"UUID del rostro recuperado: {faceEntityUUID}")
                 try:
                     #retrieve the multimedia entity UUID from the database
-                    fotoVideoEntityInstanceUUID = dbHandlerInstance.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(filePath)
+                    multimediaFileInstanceUUID = dbHandlerInstance.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(filePath)
                 except EntityInstanceFromAtributeInstanceNotFoundException as e:
                     logInfo(f"ERROR CAPTURADO -> No existe entidad {ENTITY_KEY_MULTIMEDIA} para {filePath}, añadiendola a la colección de base de datos")
                     multimediaFileInstanceInfo = dbHandlerInstance.aggregateFileToDatabasecollection(multimediaFileEntityDescription,filePath)                    
                     logInfo(f"UUID de {ENTITY_KEY_MULTIMEDIA} recuperado: {multimediaFileInstanceInfo[0]}")
-                    fotoVideoEntityInstanceUUID = multimediaFileInstanceInfo[0]
+                    multimediaFileInstanceUUID = multimediaFileInstanceInfo[0]
 
                 #insert the relationship between the face and the multimedia entity
-                dbHandlerInstance.insertRelationship(RELATIONSHIP_KEY_APPEARS, faceEntityUUID, fotoVideoEntityInstanceUUID)
-                dbHandlerInstance.connection.commit()  # Confirmar la transacción
-                logInfo(f"Se ha creado la relación entre el rostro y {ENTITY_KEY_MULTIMEDIA} con UUIDs {faceEntityUUID} y {fotoVideoEntityInstanceUUID}")
+                dbHandlerInstance.insertRelationship(RELATIONSHIP_KEY_APPEARS, faceEntityUUID, multimediaFileInstanceUUID)
+                logInfo(f"Se ha creado la relación entre el rostro y {ENTITY_KEY_MULTIMEDIA} con UUIDs {faceEntityUUID} y {multimediaFileInstanceUUID}")
                 logInfo(f"Rostro procesado")
             except Exception as e:
                 logError(f"Error al procesar el rostro: {e}")
                 raise
-        logInfo(f"Fin deteccion de rotros {uuidDeteccion} - Rostros Detectados: {detectedFaces}")
+        logInfo(f"Fin deteccion de {ENTITY_KEY_FACE} {uuidDeteccion} - Rostros Detectados: {detectedFaces}")
 
     def evaluateImageQuality(self, image):
         """
@@ -162,7 +161,7 @@ class FaceProcessor:
             self.isRunning = True
             self.stop_event.clear()  # Reinicia el evento al iniciar
             self.dbHandler = DatabaseHandler(app_context.chatBoot)  # Acceso al manejador de base de datos
-
+            self.distinctPersonTracker = UniquePersonTracker()
             app_context.chatBoot.speak("Iniciando detección de rostros. Puede continuar trabajando con la aplicación.")
             logInfo("Iniciando procesamiento de archivos")
 
@@ -185,6 +184,7 @@ class FaceProcessor:
                         continue
                             
                     try:
+                        self.distinctPersonTracker.startNewFile(filePath)
                         self.dbHandler.connection.execute("BEGIN TRANSACTION")  # Iniciar transacción
                         transactionUUID = str(uuid.uuid4())
                         logInfo(f"Iniciada transacción -> {transactionUUID}")
@@ -199,6 +199,7 @@ class FaceProcessor:
                                     break  # Sal del bucle si no se puede leer el frame
                                 threshold = self.evaluateImageQuality(frame)
                                 self.detectFaces(frame, threshold, filePath,ENTITY_KEY_MULTIMEDIA, self.dbHandler)
+                                self.distinctPersonTracker.processFrame(frame)
                             cap.release()
                             logInfo(f"Video cerrado: {filePath}")
                         elif file_type == IMAGE:
@@ -210,15 +211,20 @@ class FaceProcessor:
                                 continue
                             threshold = self.evaluateImageQuality(image)
                             self.detectFaces(image, threshold, filePath,ENTITY_KEY_MULTIMEDIA,self.dbHandler)
+                            self.distinctPersonTracker.processFrame(image)
                             logInfo(f"Imagen cerrada: {file}")
                         else:
                             logWarning(f"Formato no soportado para {filePath}.")
                             continue
+                        #Establecer el numero total de personas unicas detectadas en el archivo multimedia actual
+                        totalUniquePersonsDetected = self.distinctPersonTracker.getTotalPeopleDetected()
+                        self.dbHandler.setTotalNumerDistinctPersonDetectedInFile(filePath,totalUniquePersonsDetected)
                         logInfo(f"Estableciendo marca de detección de rostros ejecutada para {filePath} en la base de datos.")    
-                        #set the multimedia entity with the face detection done attribute
+                        #Establecer la marca de detección de caras ejecutada para el archivo multimedia actual
                         self.dbHandler.setFaceDetectionHasBeenDone(filePath)
                         self.dbHandler.connection.commit()  # Confirmar la transacción
                         logInfo(f"Finalizada transacción -> {transactionUUID}")
+
                     except Exception as e:
                         self.dbHandler.connection.rollback()  # Revertir la transacción en caso de error
                         logError(f"Error al procesar {filePath}, rollback done: {e}")

@@ -13,14 +13,12 @@ from emociones.globals.globalVars import app_context
 
 class Gallery:
     def __init__(self, content_layout):
-        app_context.chatBoot.speak('Inicializando Galeria JMBL')
         logInfo("Iniciando Gallery")
         self.content_layout = content_layout
         self.scroll_area = None
         self.gallery_layout = None
         self.current_image_widgets = []
         logInfo("Gallery iniciada")
-        app_context.chatBoot.speak('Galeria inicializada JMBL')
 
     def openFolderDialog(self):
         collection = Collection()

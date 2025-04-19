@@ -10,8 +10,8 @@ ATTRIBUTE_KEY_JPG = "jpg"  # Atributo JPG indica el formato del archivo contenid
 ATTRIBUTE_KEY_PATH = "ruta"  # Atributo Ruta de la imagen o video
 ATTRIBUTE_KEY_SIGNATURE = "firma"  # Atributo  Firma de la entidad (hash SHA-256) para imagenes (fotos, videos, caras)
 ATTRIBUTE_KEY_FACEDECTION_DONE = "dectección de cara ejecutada"  # Atributo que indica si se ha realizado la detección de cara en la imagen o video
+ATTRIBUTE_KEY_DICTINCT_PERSON_COUNT = "número de personas únicas detectadas"
 
-RELATIONSHIP_KEY_CAN_BE = "puede ser"  # Relación entre la archivo multimedia y foto/video
 RELATIONSHIP_KEY_APPEARS = "aparece en"  # Relación entre cara y foto/video
 
 IMAGE="image"

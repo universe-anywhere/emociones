@@ -4,17 +4,15 @@ import uuid
 from emociones.utils.io import getBasePath
 from emociones.utils.fileUtil import calculateHash
 from emociones.preferences import preferences
-from emociones.constants import ENTITY_KEY_MULTIMEDIA, ATTRIBUTE_KEY_SIGNATURE, ATTRIBUTE_KEY_SIGNATURE, ATTRIBUTE_KEY_JPG, ATTRIBUTE_KEY_PATH, RELATIONSHIP_KEY_CAN_BE, ATTRIBUTE_KEY_FACEDECTION_DONE
+from emociones.constants import ENTITY_KEY_MULTIMEDIA, ATTRIBUTE_KEY_SIGNATURE, ATTRIBUTE_KEY_SIGNATURE, ATTRIBUTE_KEY_JPG, ATTRIBUTE_KEY_PATH, ATTRIBUTE_KEY_FACEDECTION_DONE, ATTRIBUTE_KEY_DICTINCT_PERSON_COUNT
 from emociones.utils.log import logInfo, logError, logWarning
 from emociones.backend.database.databaseExceptions import EntityNotFoundException, EntityInstanceFromAtributeInstanceNotFoundException, AttributeNotFoundException, AttributeInstanceNotFoundException, RelationshipNotFoundException
 
 class DatabaseHandler:
     def __init__(self, chatBot):
         logInfo("Iniciando DatabaseHandler")
-        self.chatBot = chatBot
-        base_path = getBasePath();
-        
-        self.db_name = os.path.join(base_path, preferences["dataBase"]["db_path"])
+        self.chatBot = chatBot        
+        self.db_name = os.path.join(getBasePath(), preferences["dataBase"]["db_path"])
         logInfo(f"Conectando a la base de datos {self.db_name}")
         self.connection = sqlite3.connect(self.db_name)
         self.cursor = self.connection.cursor()
@@ -187,6 +185,22 @@ class DatabaseHandler:
             logError(f"Al buscar attributeUUID en attribute {description} para la entidad {entityDescription}: {e}")
             raise
        
+    def fetchAttributeInstanceUUIDValueNum(self, description, valueNum, entityDescription):
+        try:
+            attributeUUID= self.fetchAttributeUUID(description, entityDescription)
+            self.cursor.execute('''
+                SELECT entityInstanceUUID, attributeInstanceUUID FROM attributeInstance
+                WHERE attributeUUID = ? AND valueNum = ?
+                ''', (attributeUUID,valueNum))
+            result = self.cursor.fetchone()
+            if result:
+                return result 
+            else: 
+                raise AttributeInstanceNotFoundException(f"No se encontró la instancia para el atributo {description} para la entidad {entityDescription}.")
+        except sqlite3.Error as e:
+            logError(f"Al buscar attributeInstanceUUID en attributeInstance para el atributo {description}: {e}")
+            raise
+
     def fetchAttributeInstanceUUIDValueText(self, description, valueText, entityDescription):
         try:
             attributeUUID= self.fetchAttributeUUID(description, entityDescription)
@@ -244,6 +258,26 @@ class DatabaseHandler:
             return entityInstanceUUID
         except sqlite3.Error as e:
             logError(f"Al insertar en entityInstance la entidad {entityDescription}: {e}")
+            raise
+
+    def insertAttributeInstanceValueNum(self, entityDescription, attributeInstanceDescription, value_num):
+        try:
+            try: 
+                UUIDsImfo = self.fetchAttributeInstanceUUIDValueNum(attributeInstanceDescription, value_num, entityDescription)    
+                return UUIDsImfo
+            except AttributeInstanceNotFoundException as e:
+                logInfo(f"No existe una instancia para {attributeInstanceDescription} para {value_num}. Se procede a crearla.")
+                entityInstanceUUID = self.insertEntityInstance(entityDescription)
+                attributeUUID = self.fetchAttributeUUID(attributeInstanceDescription,entityDescription)
+                attributeInstanceUUID = str(uuid.uuid4())
+                self.cursor.execute('''
+                    INSERT INTO attributeInstance ( attributeInstanceUUID, valueNum, attributeUUID, entityInstanceUUID) 
+                    VALUES ( ?, ?, ?, ?)
+                    ''', (attributeInstanceUUID,value_num, attributeUUID, entityInstanceUUID))
+                logInfo(f"Instancia creada para {value_num}.")
+                return entityInstanceUUID, attributeInstanceUUID
+        except sqlite3.Error as e:
+            logError(f"Al insertar en attributeInstance: {e}")
             raise
 
     def insertAttributeInstanceValueText(self, entityDescription, attributeInstanceDescription, value_text):
@@ -310,11 +344,31 @@ class DatabaseHandler:
             self.cursor.execute('''
                 INSERT INTO attributeInstance (attributeInstanceUUID, valueBool, attributeUUID, entityInstanceUUID) VALUES (?, ?, ?, ?)
                 ''', (attributeInstanceUUID, True, attributeUUID, multimediaFileEntityInstanceUUID))
-            logInfo(f"Marcado que se ha hecho la detección de caras para {file_path}.")
+            logInfo(f"Marcado que se ha hecho la {ATTRIBUTE_KEY_FACEDECTION_DONE} para la entidad {ENTITY_KEY_MULTIMEDIA} {file_path}.")
         except sqlite3.Error as e:
-            logError(f"Al marcar que se ha hecho la detección de caras para {file_path}: {e}")
+            logError(f"Al marcar que se ha hecho la {ATTRIBUTE_KEY_FACEDECTION_DONE} para la entidad {ENTITY_KEY_MULTIMEDIA} {file_path}: {e}")
             raise
-        
+
+    def setTotalNumerDistinctPersonDetectedInFile(self, file_path, valueNum):
+        logInfo(f"Marcando que se ha hecho la detección de caras para {file_path}.")
+        try:
+            try:
+                multimediaFileEntityInstanceUUID = self.getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(file_path)
+            except EntityInstanceFromAtributeInstanceNotFoundException as e:
+                logInfo(f"ERROR Capturado -> No se encontró la instancia de entidad para el valor único {file_path}, por lo que se crea")
+                multimediaFileEntityInstanceUUID = self.aggregateFileToDatabasecollection(ENTITY_KEY_MULTIMEDIA,file_path)[0]
+
+            attributeUUID = self.getAttribute(ATTRIBUTE_KEY_DICTINCT_PERSON_COUNT)
+            logInfo(f"Encontrado el atributo {ATTRIBUTE_KEY_DICTINCT_PERSON_COUNT} para la entidad {ENTITY_KEY_MULTIMEDIA} con attributeUUID: {attributeUUID}.")
+            attributeInstanceUUID = str(uuid.uuid4())
+            self.cursor.execute('''
+                INSERT INTO attributeInstance (attributeInstanceUUID, valueNum, attributeUUID, entityInstanceUUID) VALUES (?, ?, ?, ?)
+                ''', (attributeInstanceUUID, valueNum, attributeUUID, multimediaFileEntityInstanceUUID))
+            logInfo(f"Establecido el {ATTRIBUTE_KEY_DICTINCT_PERSON_COUNT} para el {ENTITY_KEY_MULTIMEDIA} {file_path} - Total personas únicas detectadas {valueNum}.")
+        except sqlite3.Error as e:
+            logError(f"Al establecer el {ATTRIBUTE_KEY_DICTINCT_PERSON_COUNT} para el {ENTITY_KEY_MULTIMEDIA} {file_path}: {e}")
+            raise
+
     def faceDetectionHasBeenDone(self, file_path):
         logInfo(f"Buscando si se ha hecho la detección de caras para {file_path}.")
         try:
@@ -335,6 +389,23 @@ class DatabaseHandler:
             return False
         except sqlite3.Error as e:
             logError(f"Al buscar si se ha hecho la detección de caras para {file_path}: {e}")
+            raise
+
+    def getAttributeInstanceEntityInstanceUUIDFromUniqueValueNum(self, value_num):
+        try:
+            logInfo(f"Buscando entityInstanceUUID de la instancia de atributo con valor único {value_num}.")
+            self.cursor.execute('''
+            SELECT entityInstanceUUID FROM attributeInstance
+            WHERE valueText = ?
+            ''', (value_num,))
+            result = self.cursor.fetchone()
+            if result:
+                return result[0]
+            else:
+                logError(f"No se encontró la instancia de entidad para el valor único {value_num}.")   
+                raise EntityInstanceFromAtributeInstanceNotFoundException(f"No se encontró la instancia de entidad para el valor único {value_num}.") 
+        except sqlite3.Error as e:
+            logError(f"Al buscar attribute_instance_UUIDs en attributeInstance para {value_num}: {e}")
             raise
 
     def getAttributeInstanceEntityInstanceUUIDFromUniqueValueText(self, value_text):
@@ -386,36 +457,34 @@ class DatabaseHandler:
     def existRelationship(self, relationshipUUID ,entityInstanceUUID1, entityInstanceUUID2):
         
         self.cursor.execute('''
-        SELECT * FROM entitiesRelationShipInstance WHERE relationshipUUID = ? AND entityInstanceUUID1 = ? AND entityInstanceUUID2 = ?
+        SELECT count(1) FROM entitiesRelationShipInstance WHERE relationshipUUID = ? AND entityInstanceUUID1 = ? AND entityInstanceUUID2 = ?
         ''', (relationshipUUID, entityInstanceUUID1, entityInstanceUUID2))
 
         result = self.cursor.fetchone()
         if result:
-            return True
+            return result[0] > 0
         else:
             return False
         
     def insertRelationship(self, relationShipDescription, entityInstanceUUID1, entityInstanceUUID2):
         relationshipUUID = self.getRelationshipUUID(relationShipDescription)
-        try:
-            self.existRelationship(relationshipUUID ,entityInstanceUUID1, entityInstanceUUID2)
+        if self.existRelationship(relationshipUUID ,entityInstanceUUID1, entityInstanceUUID2):
             logInfo(f"La relación {relationShipDescription} ya existe en la base de datos, se ignora la inserción.")
             return
-        except RelationshipNotFoundException as e:
-            try:
-                logInfo(f"Insertando relación {relationShipDescription} con relationshipUUID {relationshipUUID}, entityInstanceUUID1 {entityInstanceUUID1} y entityInstanceUUID2 {entityInstanceUUID2}.")
-                # Generar un UUID único para la relación
-                relationshipInstanceUUID = str(uuid.uuid4())
-                # Insertar la relación en la tabla relationshipInstance
-                self.cursor.execute('''
-                        INSERT INTO entitiesRelationShipInstance (entitiesRelationshipInstanceUUID, relationshipUUID, 
-                                    entityInstanceUUID1, entityInstanceUUID2)  values (?, ?, ?, ?)
+        try:
+            logInfo(f"Insertando relación {relationShipDescription} con relationshipUUID {relationshipUUID}, entityInstanceUUID1 {entityInstanceUUID1} y entityInstanceUUID2 {entityInstanceUUID2}.")
+            # Generar un UUID único para la relación
+            relationshipInstanceUUID = str(uuid.uuid4())
+            # Insertar la relación en la tabla relationshipInstance
+            self.cursor.execute('''
+                INSERT INTO entitiesRelationShipInstance (entitiesRelationshipInstanceUUID, relationshipUUID, 
+                        entityInstanceUUID1, entityInstanceUUID2)  values (?, ?, ?, ?)
                 ''', (relationshipInstanceUUID, relationshipUUID, entityInstanceUUID1, entityInstanceUUID2))
-                # Guardar los cambios y cerrar la conexión
-                logInfo(f"Relación {relationShipDescription} insertada correctamente con relationshipInstanceUUID {relationshipInstanceUUID}.")
-            except sqlite3.Error as e:
-                logError(f"Al insertar en entitiesRelationShipInstance: {e}")
-                raise
+            # Guardar los cambios y cerrar la conexión
+            logInfo(f"Relación {relationShipDescription} insertada correctamente con relationshipInstanceUUID {relationshipInstanceUUID}.")
+        except sqlite3.Error as e:
+            logError(f"Al insertar en entitiesRelationShipInstance: {e}")
+            raise
         except sqlite3.Error as e:
             logError(f"Al insertar en relationship {relationShipDescription} con relationshipUUID {relationshipUUID}, entityInstanceUUID1 {entityInstanceUUID1} y entityInstanceUUID2 {entityInstanceUUID2} -> {e}")
             raise
@@ -424,17 +493,10 @@ class DatabaseHandler:
         # Insertar nueva instancia
         logInfo(f"Insertando nueva instancia para {imageVideoEntityDescription} con el atributo {ATTRIBUTE_KEY_PATH}")
         multimediaFileInstanceInfo = self.insertAttributeInstanceValueText(imageVideoEntityDescription, ATTRIBUTE_KEY_PATH, file_path)
-        if multimediaFileInstanceInfo is None:
-            logWarning(f"No se pudo insertar la instancia para {imageVideoEntityDescription} con el atributo {ATTRIBUTE_KEY_PATH}, por lo que no se crea la relación entre archivo multimedia y foto/video")
-            return None
 
         logInfo(f"Insertando para nueva instancia para {imageVideoEntityDescription} con el atributo {ATTRIBUTE_KEY_SIGNATURE}")
         self.insertFileHash(file_path, imageVideoEntityDescription)
                             
-        multimediaFileInstanceUUID = multimediaFileInstanceInfo[0]
-        multimediaFileUUID = self.fetchEntityUUID(ENTITY_KEY_MULTIMEDIA)         
-        logInfo(f"Insertando relación entre {imageVideoEntityDescription} y {ENTITY_KEY_MULTIMEDIA} con valores {multimediaFileUUID} y {multimediaFileInstanceUUID}")   
-        self.insertRelationship(RELATIONSHIP_KEY_CAN_BE, multimediaFileUUID, multimediaFileInstanceUUID)
         return multimediaFileInstanceInfo
     
     def close(self):
