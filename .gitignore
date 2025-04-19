@@ -5,3 +5,4 @@ logs/
 emociones.dbs.bak
 emociones.dbs
 src/emociones/data/yolov5s.pt
+src/emociones/data/emociones.sqlite-journal

@@ -108,7 +108,6 @@ class FaceProcessor:
 
                 #insert the relationship between the face and the multimedia entity
                 dbHandlerInstance.insertRelationship(RELATIONSHIP_KEY_APPEARS, faceEntityUUID, multimediaFileInstanceUUID)
-                logInfo(f"Se ha creado la relación entre el rostro y {ENTITY_KEY_MULTIMEDIA} con UUIDs {faceEntityUUID} y {multimediaFileInstanceUUID}")
                 logInfo(f"Rostro procesado")
             except Exception as e:
                 logError(f"Error al procesar el rostro: {e}")
